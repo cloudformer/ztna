@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ztna</title>
+<style>
+/* idlefree-ui */
+
+/* ---- ztna ---- */
+:root { --width: 1000px; }
+.page { max-width: calc(var(--width) + 32px); margin-inline: auto; }
+.bar, .status { padding-inline: max(16px, calc((100% - var(--width)) / 2)); }
+.panel { padding: 14px 16px; }
+.field { display: inline-flex; align-items: center; gap: 6px; }
+.field select { padding: 5px 8px; }
+.start-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.start-row .spacer { flex: 1; }
+.rows { display: flex; flex-direction: column; margin-top: 10px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.rows:empty { display: none; }
+.row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 9px 12px;
+  border-bottom: 1px solid var(--line); cursor: pointer; font-size: 13px; background: var(--panel); }
+.row:last-child { border-bottom: none; }
+.row:hover { background: var(--panel2); }
+.row.picked { background: var(--accent-bg); }
+.row .id { font: 12px var(--mono); }
+.row .meta { color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .left { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+.row .left.soon { color: var(--err); font-weight: 600; }
+.row .act { display: flex; gap: 6px; justify-content: flex-end; }
+.empty-row { padding: 10px 12px; color: var(--muted); font-size: 13px; }
+.connect { display: grid; gap: 10px; }
+.connect .who { color: var(--muted); font-size: 13px; }
+.connect .who b { color: var(--text); }
+.seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 8px; overflow: hidden; }
+.seg button { border: none; background: none; padding: 6px 14px; font: inherit; font-size: 13px; color: var(--muted); cursor: pointer; border-right: 1px solid var(--line2); }
+.seg button:last-child { border-right: none; }
+.seg button.on { background: var(--accent-bg); color: var(--accent-text); font-weight: 600; }
+.ctl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ctl select, .ctl input { padding: 6px 9px; }
+.ctl input { font: 12px var(--mono); min-width: 170px; }
+.cmd { position: relative; }
+.cmd pre { margin: 0; padding: 11px 12px; border-radius: 8px; background: var(--code-bg); color: var(--code-text);
+  font: 12px/1.7 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmd .copy { position: absolute; top: 8px; right: 8px; }
+.note { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <span class="brand"><span class="logo">🛡</span>ztna</span>
+  <span class="meta"><span class="k">Endpoint</span><span class="chip" id="info-host">-</span></span>
+  <span class="meta" id="who-meta" hidden><span class="k">Signed in</span><span class="chip" id="who">-</span></span>
+  <span class="spacer"></span>
+  <button class="tb" id="logout">Sign out</button>
+</header>
+
+<div class="page">
+  <section class="panel">
+    <div class="start-row">
+      <label class="field"><span class="hint">Network</span><select id="network"></select></label>
+      <label class="field"><span class="hint">For</span><select id="duration"></select></label>
+      <button class="btn btn-primary" id="power-on">⏻ Start jump</button>
+      <span class="spacer"></span>
+      <span class="hint" id="jumps-sum"></span>
+    </div>
+    <div class="rows" id="jumps"></div>
+  </section>
+
+  <section class="panel connect">
+    <div class="who" id="who-jump">Start a jump, then pick it to connect.</div>
+    <div class="ctl">
+      <div class="seg" id="mode" role="radiogroup" aria-label="Mode">
+        <button data-m="map" class="on" type="button">Map</button>
+        <button data-m="vpn" type="button">VPN-like</button>
+      </div>
+      <label class="field" id="target-field"><span class="hint">Target</span><select id="target"></select></label>
+      <input id="custom" placeholder="db-host:3306" hidden>
+    </div>
+    <div class="cmd"><button class="btn btn-small copy" id="copy">Copy</button><pre id="cmd"># start a jump first</pre></div>
+    <div class="note" id="hint"></div>
+  </section>
+</div>
+
+<div class="history" id="history" hidden></div>
+<footer class="status" id="status" title="Click: this session's calls">
+  <span class="last" id="last">ready</span>
+  <a class="ver" href="https://github.com/cloudformer/ztna/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer"
+     title="What changed in each release">ztna __VERSION__</a>
+</footer>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <h3>Sign in</h3>
+    <div class="form-grid">
+      <div class="form-field"><label for="u">user</label><input id="u" autocomplete="username"></div>
+      <div class="form-field"><label for="p">password</label><input id="p" type="password" autocomplete="current-password"></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" value="ok">OK</button>
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const h = (tag, props, ...kids) => { const e = Object.assign(document.createElement(tag), props || {}); e.append(...kids.filter(k => k != null)); return e; };
+const store = {
+  get: k => { try { return localStorage.getItem('ztna_' + k); } catch(e){ return null; } },
+  set: (k, v) => { try { v == null ? localStorage.removeItem('ztna_' + k) : localStorage.setItem('ztna_' + k, v); } catch(e){} },
+};
+let cred = store.get('cred') || '';
+$('#info-host').textContent = location.host;
+let cfg = null, jumps = [], picked = null, mode = 'map';
+const POLL_MS = 4000;
+
+// ---- sign-in ----
+function askCred(){
+  return new Promise(resolve => {
+    const dlg = $('#dlg'); dlg.returnValue = 'cancel';
+    dlg.onclose = () => { if (dlg.returnValue === 'ok' && $('#u').value) { cred = $('#u').value.trim() + ':' + $('#p').value; store.set('cred', cred); } $('#p').value = ''; resolve(dlg.returnValue === 'ok'); };
+    dlg.showModal(); $('#u').focus();
+  });
+}
+async function api(path, opts = {}, retried){
+  const headers = {'content-type': 'application/json'};
+  if (cred) headers.authorization = 'Basic ' + btoa(cred);
+  const r = await fetch(path, Object.assign({}, opts, {headers}));
+  let data = {}; try { data = await r.json(); } catch(e) {}
+  if (r.status === 401){
+    if (!data.http_auth) throw new Error('sign in through Cloudflare Access, then reload');
+    cred = ''; store.set('cred', null);
+    if (!retried && await askCred()) return api(path, opts, true);
+    throw new Error('not signed in');
+  }
+  if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+  return data;
+}
+
+// ---- status bar ----
+const calls = []; let historyOpen = store.get('history') === '1';
+function ts(){ const d = new Date(), p = n => String(n).padStart(2, '0'); return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }
+function note(text, ok){ calls.push({text: `[${ts()}] ${text}`, cls: ok ? 'ok' : 'err'}); if (calls.length > 300) calls.shift();
+  const last = calls[calls.length - 1]; $('#last').textContent = last.text; $('#last').className = 'last ' + last.cls; renderHistory(); }
+function renderHistory(){ const box = $('#history'); box.hidden = !historyOpen;
+  if (historyOpen) box.replaceChildren(...(calls.length ? calls.slice().reverse().map(c => h('div', {className: c.cls, textContent: c.text})) : [h('div', {textContent: 'No calls yet.'})])); }
+$('#status').onclick = e => { if (e.target.closest('a')) return; historyOpen = !historyOpen; store.set('history', historyOpen ? '1' : '0'); renderHistory(); };
+
+// ---- helpers ----
+function short(id){ return id.replace('i-', '').slice(0, 8); }
+function hours(m){ return m % 60 ? `${m} min` : `${m / 60} h`; }
+function left(until){ const s = Math.max(0, Math.round((new Date(until) - new Date()) / 1000));
+  return [s >= 3600 ? `${Math.floor(s/3600)} h ${String(Math.floor(s/60)%60).padStart(2,'0')} min left` : `${Math.ceil(s/60)} min left`, s < 600]; }
+
+// ---- jumps list ----
+function render(){
+  const up = jumps.filter(j => j.state === 'running' || j.state === 'pending');
+  $('#jumps-sum').textContent = `${up.length} up · at most ${cfg.max_jumps} · each terminates after ${cfg.idle_shutdown_minutes} min idle`;
+  $('#power-on').disabled = up.length >= cfg.max_jumps;
+  $('#jumps').replaceChildren(...jumps.map(j => {
+    const [rest, soon] = j.until ? left(j.until) : ['', false];
+    const starting = j.state === 'pending';
+    const acts = [h('button', {className: 'btn btn-small', textContent: '+' + hours(cfg.extend_minutes), title: 'Keep it up longer',
+                    onclick: e => { e.stopPropagation(); extend(j); }}),
+                  h('button', {className: 'btn-danger', textContent: 'Terminate', onclick: e => { e.stopPropagation(); terminate(j); }})];
+    const r = h('div', {className: 'row' + (picked === j.id ? ' picked' : '')},
+      h('span', {className: 'id', textContent: short(j.id)}),
+      h('span', {className: 'meta', textContent: `${j.network} · ${j.id}${starting ? ' · starting' : ''} · ${j.by || ''}`}),
+      h('span', {className: 'left' + (soon ? ' soon' : ''), textContent: rest}),
+      h('span', {className: 'act'}, ...acts));
+    r.onclick = () => { picked = j.id; renderConnect(); render(); };
+    return r;
+  }));
+  if (!jumps.length) $('#jumps').replaceChildren(h('div', {className: 'empty-row', textContent: 'No jump up. Start one above.'}));
+}
+
+// ---- connect ----
+function fillTargets(){
+  if (mode === 'map'){
+    $('#target').replaceChildren(...cfg.targets.map(t => h('option', {value: t, textContent: t})), h('option', {value: '__c', textContent: '自定义…'}));
+    $('#target').disabled = false; $('#target-field').style.display = '';
+  } else {
+    $('#target').replaceChildren(h('option', {textContent: 'all · 0.0.0.0/0 → SOCKS :1080'}));
+    $('#target').disabled = true; $('#custom').hidden = true;
+  }
+}
+function tval(){ return $('#target').value === '__c' ? $('#custom').value.trim() : $('#target').value; }
+function renderConnect(){
+  const j = jumps.find(x => x.id === picked);
+  $('#custom').hidden = !(mode === 'map' && $('#target').value === '__c');
+  if (!j){ $('#who-jump').textContent = 'Start a jump, then pick it to connect.'; $('#cmd').textContent = '# pick a jump'; $('#hint').textContent = ''; return; }
+  $('#who-jump').innerHTML = `Connect · <b>${short(j.id)}</b> · ${j.network} · ${j.id}`;
+  const region = cfg.region ? ` --region ${cfg.region}` : '';
+  if (mode === 'map'){
+    const t = (tval() || 'host:port'), [host, port] = t.split(':');
+    $('#cmd').textContent =
+`aws ssm start-session --target ${j.id}${region} \\
+  --document-name AWS-StartPortForwardingSessionToRemoteHost \\
+  --parameters host=${host || 'host'},portNumber=${port || 'PORT'},localPortNumber=${port || 'PORT'}`;
+    $('#hint').textContent = `localhost:${port || 'PORT'} = ${host || 'host'}（through ${short(j.id)}）`;
+  } else {
+    $('#cmd').textContent =
+`ssh -N -D 1080 \\
+  -o ProxyCommand="aws ssm start-session --target ${j.id}${region} --document-name AWS-StartSSHSession --parameters portNumber=22" \\
+  ${cfg.ssh_user}@${j.id}`;
+    $('#hint').textContent = `SOCKS5 on 127.0.0.1:1080 — point your browser/apps here (all traffic via ${short(j.id)})`;
+  }
+}
+$('#mode').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.m;
+  $('#mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); fillTargets(); renderConnect(); });
+$('#target').onchange = renderConnect;
+$('#custom').oninput = renderConnect;
+$('#copy').onclick = () => { navigator.clipboard?.writeText($('#cmd').textContent).then(() => note('command copied', true)).catch(() => {}); };
+
+// ---- actions ----
+$('#power-on').onclick = async () => {
+  $('#power-on').disabled = true;
+  try { const j = await api('/api/jumps', {method: 'POST', body: JSON.stringify({network: $('#network').value, minutes: +$('#duration').value})});
+    note(`jump ${short(j.id)} starting in ${j.network}, for ${hours(+$('#duration').value)}`, true);
+    jumps.unshift(j); picked = j.id; render(); renderConnect();
+  } catch(e) { note(e.message, false); render(); }
+};
+async function extend(j){ try { const d = await api(`/api/jumps/${j.id}/extend`, {method: 'POST'}); j.until = d.until; render();
+  note(`jump ${short(j.id)} kept until ${new Date(d.until).toLocaleTimeString()}`, true); } catch(e) { note(e.message, false); } }
+async function terminate(j){ try { await api(`/api/jumps/${j.id}/stop`, {method: 'POST'}); note(`jump ${short(j.id)} terminating`, true); } catch(e) { note(e.message, false); } }
+$('#logout').onclick = () => { cred = ''; store.set('cred', null); note('signed out', true); };
+
+// ---- poll ----
+async function poll(){
+  try { jumps = (await api('/api/jumps')).jumps;
+    if (picked && !jumps.some(j => j.id === picked)) { picked = null; renderConnect(); }
+    render();
+  } catch(e) { note(e.message, false); }
+  setTimeout(poll, POLL_MS);
+}
+
+async function start(){
+  cfg = await api('/api/config');
+  $('#network').replaceChildren(...cfg.networks.map(n => h('option', {value: n, textContent: n})));
+  $('#network').value = cfg.default_network;
+  $('#duration').replaceChildren(...cfg.durations.map(m => h('option', {value: m, textContent: hours(m)})));
+  $('#duration').value = cfg.default_minutes;
+  fillTargets(); renderConnect();
+  const me = await api('/api/me'); $('#who').textContent = me.identity; $('#who-meta').hidden = false;
+  poll();
+}
+renderHistory();
+start().catch(e => note(e.message, false));
+</script>
+</body>
+</html>

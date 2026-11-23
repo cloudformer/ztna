@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 640" width="1100" height="640"
+     font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <style>
+      .win   { fill: #0F1620; stroke: #26323B; stroke-width: 1.4; }
+      .bar   { fill: #0F1620; }
+      .panel { fill: #141C24; stroke: #26323B; stroke-width: 1.2; }
+      .rowln { fill: #141C24; stroke: #26323B; stroke-width: 1; }
+      .brand { font-size: 17px; font-weight: 700; fill: #E6ECF0; }
+      .k     { font-size: 11px; fill: #8A97A3; }
+      .chip  { fill: #1E2A32; stroke: #2B3843; stroke-width: 1; }
+      .chipt { font: 12px ui-monospace, Menlo, monospace; fill: #CBD5E1; }
+      .fold  { font-size: 14px; font-weight: 600; fill: #E6ECF0; }
+      .hint  { font-size: 12px; fill: #8A97A3; }
+      .mono  { font: 12px ui-monospace, Menlo, monospace; fill: #8A97A3; }
+      .what  { font-size: 13px; fill: #E6ECF0; }
+      .btn   { fill: #0A6E5C; }
+      .btnt  { font-size: 12.5px; font-weight: 600; fill: #FFFFFF; }
+      .btno  { fill: #1B252C; stroke: #3A4752; stroke-width: 1; }
+      .btnot { font-size: 12px; fill: #CBD5E1; }
+      .sel   { fill: #1B252C; stroke: #3A4752; stroke-width: 1; }
+      .selt  { font-size: 12px; fill: #CBD5E1; }
+      .badge { stroke-width: 1; }
+      .brun  { fill: #11302B; stroke: #4FD1B0; } .brunt { font-size: 11.5px; font-weight: 600; fill: #4FD1B0; }
+      .segon { fill: #11302B; stroke: #4FD1B0; } .segont { font-size: 12.5px; font-weight: 600; fill: #4FD1B0; }
+      .code  { fill: #0A0E13; }
+      .cl    { font: 12px ui-monospace, Menlo, monospace; fill: #E2E8F0; }
+      .cp    { font: 12px ui-monospace, Menlo, monospace; fill: #4FD1B0; }
+      .cc    { font: 12px ui-monospace, Menlo, monospace; fill: #8A97A3; }
+      .status{ fill: #0F1620; stroke: #26323B; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1100" height="640" rx="14" fill="#0A0F14"/>
+  <rect x="16" y="14" width="1068" height="612" rx="12" class="win"/>
+
+  <!-- top bar -->
+  <rect x="17" y="15" width="1066" height="46" rx="12" class="bar"/>
+  <line x1="17" y1="61" x2="1083" y2="61" stroke="#26323B" stroke-width="1.2"/>
+  <text x="40" y="44" class="brand">🛡 ztna</text>
+  <text x="210" y="36" class="k">Endpoint</text>
+  <rect x="210" y="41" width="210" height="14" rx="7" class="chip"/>
+  <text x="218" y="52" class="chipt">ztna-...lambda-url.aws</text>
+  <text x="450" y="36" class="k">Signed in</text>
+  <rect x="450" y="41" width="60" height="14" rx="7" class="chip"/>
+  <text x="458" y="52" class="chipt">frank</text>
+  <rect x="990" y="30" width="78" height="22" rx="6" class="btno"/>
+  <text x="1029" y="45" text-anchor="middle" class="btnot">Sign out</text>
+
+  <!-- start panel -->
+  <rect x="40" y="78" width="1020" height="96" rx="10" class="panel"/>
+  <text x="58" y="104" class="hint">Network</text>
+  <rect x="112" y="90" width="120" height="22" rx="6" class="sel"/>
+  <text x="122" y="105" class="selt">database ▾</text>
+  <text x="248" y="104" class="hint">For</text>
+  <rect x="276" y="90" width="56" height="22" rx="6" class="sel"/>
+  <text x="284" y="105" class="selt">4 h ▾</text>
+  <rect x="344" y="88" width="110" height="26" rx="6" class="btn"/>
+  <text x="399" y="105" text-anchor="middle" class="btnt">⏻ Start jump</text>
+  <text x="1044" y="104" text-anchor="end" class="hint">1 up · at most 3 · idle 30 min → terminate</text>
+  <!-- jump rows -->
+  <rect x="52" y="124" width="996" height="40" rx="8" class="rowln" stroke="#4FD1B0"/>
+  <text x="68" y="148" class="mono">0a1b2c3d</text>
+  <text x="150" y="148" class="what">database · i-0a1b2c3d4e5f6a7b · frank</text>
+  <text x="636" y="148" class="mono">3 h 40 min left</text>
+  <rect x="852" y="133" width="44" height="22" rx="6" class="btno"/><text x="874" y="148" text-anchor="middle" class="btnot">+1 h</text>
+  <rect x="906" y="133" width="90" height="22" rx="6" class="btno"/><text x="951" y="148" text-anchor="middle" class="btnot">Terminate</text>
+
+  <!-- connect panel -->
+  <rect x="40" y="188" width="1020" height="300" rx="10" class="panel"/>
+  <text x="58" y="214" class="what">Connect · <tspan fill="#E6ECF0" font-weight="600">0a1b2c3d</tspan> · database · i-0a1b2c3d4e5f6a7b</text>
+  <!-- mode seg -->
+  <rect x="58" y="230" width="180" height="28" rx="7" class="sel"/>
+  <line x1="148" y1="230" x2="148" y2="258" stroke="#3A4752"/>
+  <rect x="58" y="230" width="90" height="28" rx="7" class="segon"/>
+  <text x="103" y="249" text-anchor="middle" class="segont">Map</text>
+  <text x="193" y="249" text-anchor="middle" class="selt">VPN-like</text>
+  <text x="256" y="249" class="hint">Target</text>
+  <rect x="306" y="232" width="200" height="24" rx="6" class="sel"/>
+  <text x="316" y="249" class="selt">db-primary:3306 ▾</text>
+  <!-- command box -->
+  <rect x="58" y="274" width="984" height="150" rx="8" class="code"/>
+  <rect x="978" y="284" width="54" height="22" rx="6" class="btno"/><text x="1005" y="299" text-anchor="middle" class="btnot">Copy</text>
+  <text x="74" y="302" class="cp">aws ssm start-session --target i-0a1b2c3d4e5f6a7b \</text>
+  <text x="74" y="322" class="cl">  --document-name AWS-StartPortForwardingSessionToRemoteHost \</text>
+  <text x="74" y="342" class="cl">  --parameters host=db-primary,portNumber=3306,localPortNumber=3306</text>
+  <text x="74" y="372" class="cc"># → localhost:3306 = db-primary (through 0a1b2c3d)</text>
+  <text x="74" y="400" class="cc"># VPN-like mode instead gives: ssh -N -D 1080 … → SOCKS5 on 127.0.0.1:1080</text>
+  <text x="58" y="450" class="hint">No inbound, no SSH key — SSM Session Manager is the gate. The jump terminates itself when the lease ends or after 30 min idle.</text>
+
+  <!-- status bar -->
+  <rect x="17" y="594" width="1066" height="32" rx="12" class="status"/>
+  <text x="40" y="614" class="mono" fill="#4FD1B0">[10:42:07] jump 0a1b2c3d starting in database, for 4 h</text>
+  <text x="1060" y="614" text-anchor="end" class="mono">ztna 0.1.0</text>
+</svg>

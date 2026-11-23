@@ -1,0 +1,15 @@
+{
+  "region": "us-east-2",
+  "aws_profile": "default",
+  "project_name": "ztna",
+
+  "ztna_version": "0.1.0",
+  "http_auth": { "enabled": true, "username": "frank", "password": "CHANGE-ME-16-chars-min" },
+
+  "networks": {
+    "database": { "subnets": ["subnet-CHANGE"], "security_group_ids": ["sg-CHANGE"] },
+    "internet": { "subnets": ["subnet-PUBLIC-CHANGE"], "security_group_ids": ["sg-CHANGE"], "public": true }
+  },
+  "default_network": "database",
+  "targets": ["db-primary.internal:3306", "cache-01.internal:6379"]
+}

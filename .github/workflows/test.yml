@@ -1,0 +1,12 @@
+name: tests
+# Every push. The logic lives in cloudformer/redefine-aws-serverless-workflow (public); change it there once.
+# No reference service: the tests use fakes for EC2 and S3.
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    uses: cloudformer/redefine-aws-serverless-workflow/.github/workflows/reusable-test.yml@main
+    with:
+      install: "pytest boto3 idlefree-auth idlefree-ui"

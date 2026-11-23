@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ztna"
+version = "0.1.0"
+description = "Zero-trust, on-demand access to private resources: a ≈ $0 Lambda console starts a stateless EC2 jump host you tunnel through over SSM, then terminate."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Frank Zhang" }]
+keywords = ["serverless", "aws", "lambda", "ec2", "ssm", "bastion", "ztna", "vpn"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Security",
+]
+dependencies = ["idlefree-auth", "idlefree-ui"]
+
+[project.urls]
+Homepage = "https://github.com/cloudformer/ztna"
+IdleFree = "https://cloudformer.github.io/"
+Repository = "https://github.com/cloudformer/ztna"
+Deploy = "https://registry.terraform.io/modules/cloudformer/infra/aws/latest/submodules/ztna"
+Changelog = "https://github.com/cloudformer/ztna/blob/main/CHANGELOG.md"
+Issues = "https://github.com/cloudformer/ztna/issues"
+
+[tool.setuptools]
+packages = ["ztna", "ztna.server"]
+
+[tool.setuptools.package-data]
+"ztna.server" = ["index.html"]

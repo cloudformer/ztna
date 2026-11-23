@@ -7,6 +7,8 @@ you are done.** Part of [IdleFree](https://cloudformer.github.io/) · 中文：[
 Replaces a standing bastion / AWS Client VPN. No always-on jump host, no VPN client, no SSH keys, no inbound ports —
 IAM + SSM Session Manager are the only gate, and nothing runs (or costs) while nobody is connected.
 
+![the console](docs/console.svg)
+
 ![architecture](docs/architecture.svg)
 
 ## Two ways to use it
