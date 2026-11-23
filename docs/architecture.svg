@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 580" width="1100" height="580"
+     font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="gCompute" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F58534"/><stop offset="1" stop-color="#C7511F"/>
+    </linearGradient>
+    <linearGradient id="gStorage" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6CAE3E"/><stop offset="1" stop-color="#3F8624"/>
+    </linearGradient>
+    <linearGradient id="gConsole" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8C4FFF"/><stop offset="1" stop-color="#5B3BC8"/>
+    </linearGradient>
+    <linearGradient id="gData" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4A8BF0"/><stop offset="1" stop-color="#2C5BC8"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#CBD5E1"/>
+    </marker>
+    <style>
+      .group  { fill: none; stroke: #94A3B8; stroke-width: 1.3; }
+      .gtitle { font-size: 15px; font-weight: 600; fill: #CBD5E1; }
+      .label  { font-size: 12.5px; font-weight: 600; fill: #F1F5F9; }
+      .sub    { font-size: 11px; fill: #94A3B8; }
+      .edge   { fill: none; stroke: #CBD5E1; stroke-width: 1.8; }
+      .callout      { fill: #F2443B; }
+      .callout-text { font-size: 12.5px; font-weight: 600; fill: #FFFFFF; }
+      .step   { font-size: 11.5px; fill: #E2E8F0; }
+      .glyph  { fill: none; stroke: #FFFFFF; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <rect width="1100" height="580" rx="18" fill="#0F172A"/>
+
+  <!-- ================= your laptop ================= -->
+  <rect x="28" y="60" width="244" height="440" rx="10" class="group" stroke-dasharray="6 5"/>
+  <text x="150" y="88" text-anchor="middle" class="gtitle">Your laptop</text>
+  <g transform="translate(107,116)">
+    <rect width="86" height="60" rx="8" fill="url(#gConsole)"/>
+    <rect x="12" y="11" width="62" height="38" rx="3" fill="#0F172A" opacity="0.55"/>
+    <rect x="18" y="17" width="34" height="4" rx="2" fill="#FFFFFF"/>
+    <rect x="18" y="25" width="50" height="4" rx="2" fill="#FFFFFF" opacity="0.7"/>
+    <rect x="18" y="33" width="44" height="4" rx="2" fill="#FFFFFF" opacity="0.5"/>
+    <rect x="-6" y="62" width="98" height="6" rx="3" fill="url(#gConsole)"/>
+    <text x="43" y="90" text-anchor="middle" class="label">Browser + local tools</text>
+    <text x="43" y="106" text-anchor="middle" class="sub">console · DBeaver · redis-cli</text>
+  </g>
+  <rect x="44" y="266" width="22" height="22" rx="4" class="callout"/><text x="55" y="282" text-anchor="middle" class="callout-text">3</text>
+  <text x="74" y="276" class="step">localhost:3306 → the jump,</text>
+  <text x="74" y="291" class="step">over the SSM tunnel:</text>
+  <text x="74" y="309" class="step">• map one port, or</text>
+  <text x="74" y="324" class="step">• route all (VPN-like)</text>
+  <text x="44" y="372" class="sub">No inbound, no SSH key —</text>
+  <text x="44" y="388" class="sub">IAM + SSM is the gate.</text>
+
+  <!-- laptop -> console (HTTPS, start/stop) -->
+  <path d="M272 150 L 372 150" class="edge" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <rect x="280" y="120" width="86" height="22" rx="5" class="callout"/>
+  <text x="323" y="137" text-anchor="middle" class="callout-text">1  HTTPS</text>
+  <!-- laptop -> jump (SSM tunnel) -->
+  <path d="M272 300 C 360 300, 420 360, 560 388" class="edge" stroke-dasharray="5 4" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <text x="330" y="352" class="sub">SSM tunnel</text>
+
+  <!-- ================= ztna ================= -->
+  <rect x="300" y="42" width="772" height="496" rx="12" class="group" stroke="#CBD5E1" stroke-width="1.6"/>
+  <text x="322" y="72" class="gtitle" font-size="18" fill="#F8FAFC">ztna: an on-demand jump host you tunnel through, then terminate</text>
+  <text x="322" y="90" class="sub">Lambda console (always on, ≈ $0) · EC2 jump from a launch template · SSM Session Manager · stateless</text>
+
+  <!-- console (Lambda) -->
+  <rect x="326" y="112" width="250" height="150" rx="9" class="group"/>
+  <text x="451" y="136" text-anchor="middle" class="gtitle" font-size="13">Console — always on, ≈ $0</text>
+  <g transform="translate(356,154)">
+    <rect width="78" height="78" rx="10" fill="url(#gCompute)"/>
+    <text x="39" y="56" text-anchor="middle" font-size="46" font-weight="700" fill="#FFFFFF">λ</text>
+  </g>
+  <g transform="translate(446,158)">
+    <text x="0" y="14" class="step">pick a network</text>
+    <text x="0" y="30" class="step">profile, start /</text>
+    <text x="0" y="46" class="step">stop the jump</text>
+    <text x="0" y="68" class="step">writes the lease</text>
+  </g>
+
+  <!-- S3 lease -->
+  <g transform="translate(610,168)">
+    <rect width="58" height="58" rx="8" fill="url(#gStorage)"/>
+    <path d="M14 16 h30 l-4 30 h-22 z" class="glyph" stroke-width="2.4"/>
+    <ellipse cx="29" cy="16" rx="15" ry="4" class="glyph" stroke-width="2"/>
+  </g>
+  <text x="680" y="188" class="label">S3: lease</text>
+  <text x="680" y="204" class="sub">start time + until</text>
+  <text x="680" y="220" class="sub">idle / lease → self-terminate</text>
+  <path d="M576 197 L 606 197" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- VPC (network profile) -->
+  <rect x="326" y="300" width="716" height="210" rx="10" class="group" stroke-dasharray="7 5"/>
+  <text x="346" y="326" class="gtitle" font-size="13">VPC · chosen network profile (subnet + security group)</text>
+
+  <!-- jump host EC2 -->
+  <rect x="352" y="344" width="230" height="140" rx="9" class="group"/>
+  <text x="467" y="368" text-anchor="middle" class="gtitle" font-size="12.5">Jump host — stateless, terminated after use</text>
+  <g transform="translate(382,382)">
+    <rect width="78" height="78" rx="10" fill="url(#gCompute)"/>
+    <rect x="16" y="22" width="46" height="34" rx="4" class="glyph" stroke-width="2.4"/>
+    <path d="M24 56 v6 M54 56 v6 M20 34 h38 M20 44 h30" class="glyph" stroke-width="2"/>
+    <text x="39" y="104" text-anchor="middle" class="label" fill="#F1F5F9">EC2 (from template)</text>
+  </g>
+  <g transform="translate(474,386)">
+    <text x="0" y="14" class="step">launched on</text>
+    <text x="0" y="30" class="step">demand into</text>
+    <text x="0" y="46" class="step">this profile</text>
+    <text x="0" y="68" class="step">tunneled via SSM</text>
+  </g>
+  <rect x="300" y="408" width="26" height="22" rx="4" class="callout"/><text x="313" y="424" text-anchor="middle" class="callout-text">2</text>
+
+  <!-- private resources -->
+  <g transform="translate(700,356)">
+    <rect width="72" height="52" rx="8" fill="url(#gData)"/>
+    <ellipse cx="36" cy="16" rx="24" ry="7" class="glyph" stroke-width="2.2"/>
+    <path d="M12 16 v20 a24 7 0 0 0 48 0 v-20" class="glyph" stroke-width="2.2"/>
+    <text x="36" y="70" text-anchor="middle" class="label">RDS</text>
+  </g>
+  <g transform="translate(820,356)">
+    <rect width="72" height="52" rx="8" fill="url(#gData)"/>
+    <text x="36" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">⚡</text>
+    <text x="36" y="70" text-anchor="middle" class="label">Redis</text>
+  </g>
+  <g transform="translate(940,356)">
+    <rect width="72" height="52" rx="8" fill="url(#gData)"/>
+    <text x="36" y="33" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Kafka</text>
+    <text x="36" y="70" text-anchor="middle" class="label">…</text>
+  </g>
+  <path d="M582 404 L 696 390" class="edge" marker-end="url(#arrow)"/>
+  <rect x="600" y="430" width="150" height="22" rx="5" class="callout"/>
+  <text x="675" y="447" text-anchor="middle" class="callout-text">4  reach private only</text>
+  <text x="700" y="430" class="sub">SG scopes it to these ports</text>
+
+  <!-- console -> jump (launch) -->
+  <path d="M451 262 L 451 342" class="edge" marker-end="url(#arrow)"/>
+  <text x="458" y="300" class="step">RunInstances (launch template)</text>
+
+  <text x="690" y="528" text-anchor="middle" class="sub">Idle: nothing runs but the ≈ $0 console. No standing bastion, no VPN, no inbound — the jump exists only while you use it.</text>
+</svg>

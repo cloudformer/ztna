@@ -7,6 +7,8 @@
 替代常驻堡垒机 / AWS Client VPN。没有 7×24 的跳板、没有 VPN 客户端、没有 SSH key、没有入站端口——IAM + SSM
 Session Manager 是唯一的闸门;没人连的时候,什么都不跑,也不花钱。
 
+![架构](docs/architecture.svg)
+
 ## 两种用法
 
 | 模式 | 做什么 | 适合 |
