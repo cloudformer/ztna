@@ -16,16 +16,18 @@ IAM + SSM Session Manager are the only gate, and nothing runs (or costs) while n
 | Mode | What it does | For |
 |---|---|---|
 | **Port-forward** (map) | a private service appears on a local port — `localhost:3306` *is* the private RDS | a local GUI tool or script against one resource |
-| **VPN-like** (tunnel) | your traffic routes through the jump — reach the whole network, go out from its IP | browsing many internal services, or a session that exits from one IP |
+| **SOCKS proxy** (`ssh -D`) | all your traffic routes through the jump — reach the whole network, go out from its IP | browsing many internal services, or a session that exits from one IP |
 
 Both use the **same jump host** and the **same SSM tunnel** — only how you connect from your laptop differs. One box,
-two usages.
+two usages. The console lists every jump's **active SSM sessions** — who, mode, target, for how long: the generated
+commands carry a `--reason ztna:<user>:<mode>:<token>:<target>` tag, and sessions started from your own browser are
+marked **YOU**.
 
 ## Lifecycle — stateless, ≈ $0 idle
 
 - The **console** is a Lambda behind a Function URL: always on, ≈ $0, the only persistent part.
-- **Start** — pick a network profile; the console launches a jump host from an **EC2 launch template** in that
-  network. A **lease** is written with the start time and a chosen duration.
+- **Start** — pick a VPC and a subnet (discovered live); the console launches a jump host from an **EC2 launch
+  template** there. A **lease** is written with the start time and a chosen duration.
 - **No hard time limit** on the host (EC2); the lease is the cost guardrail. **Extend** it (+time) from the console
   while you work.
 - **Idle shutdown** — no activity for `idle_shutdown_minutes` → the host is terminated.

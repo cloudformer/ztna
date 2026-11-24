@@ -1,8 +1,7 @@
 # ztna
 
 **Zero-trust, on-demand access to private resources: a persistent ≈ $0 Lambda console starts a stateless EC2 jump
-host in the network you pick, you tunnel through it over SSM — a port-forward to your laptop, or a SOCKS tunnel
-(VPN-like) — and it is terminated when you are done.** Part of [IdleFree](https://cloudformer.github.io/).
+host in the network you pick, you tunnel through it over SSM — a port-forward to your laptop, or a SOCKS proxy — and it is terminated when you are done.** Part of [IdleFree](https://cloudformer.github.io/).
 
 ![the ztna console](https://raw.githubusercontent.com/cloudformer/ztna/main/docs/console.svg)
 

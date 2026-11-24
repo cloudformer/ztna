@@ -41,13 +41,13 @@ body { font-family: var(--mono); font-size: 13.5px; }
 /* jump machines */
 .rows { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .rows:empty { display: none; }
-.machine { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 3px 14px; align-items: center;
+.machine { display: grid; grid-template-columns: auto minmax(0,1fr) auto auto; gap: 3px 14px; align-items: center;
   border: 1px solid var(--line2); border-left: 3px solid var(--ok); border-radius: 4px;
   background: var(--code-bg); padding: 11px 14px; cursor: pointer; }
 .machine:hover { background: var(--panel2); }
 .machine.picked { border-color: var(--accent); }
 .machine.down { border-left-color: var(--faint); }
-.machine .led { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); grid-row: span 3; align-self: start; margin-top: 4px; }
+.machine .led { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); grid-row: span 2; align-self: start; margin-top: 4px; }
 .machine.down .led { background: var(--faint); }
 .machine .top { min-width: 0; }
 .machine .iid { font-weight: 600; color: var(--code-text); font-size: 13.5px; }
@@ -57,11 +57,16 @@ body { font-family: var(--mono); font-size: 13.5px; }
 .machine .meta { color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .machine .meta b { color: var(--text); font-weight: 500; }
 .machine .meta .soon { color: var(--err); font-weight: 600; }
-.machine .sess { color: var(--warn); font-size: 12px; min-width: 0; }
+.machine .sess { grid-row: span 2; display: flex; flex-direction: column; gap: 2px; align-items: flex-end;
+  justify-content: center; border-left: 1px solid var(--line); padding-left: 14px; align-self: stretch;
+  color: var(--warn); font-size: 12px; max-width: 420px; }
+.machine .sess > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .machine .sess .mut { color: var(--faint); }
 .machine .sess .you { color: var(--accent); border: 1px solid var(--accent); border-radius: 2px;
   padding: 0 5px; font-size: 10px; letter-spacing: .08em; margin-left: 6px; }
-.machine .act { grid-row: span 3; display: flex; gap: 7px; align-self: start; }
+.machine .act { grid-row: span 2; display: flex; gap: 7px; align-self: start; }
+@media (max-width: 760px) { .machine { grid-template-columns: auto minmax(0,1fr) auto; }
+  .machine .sess { grid-row: auto; grid-column: 1 / -1; border-left: none; padding-left: 0; align-items: flex-start; } }
 .empty-row { padding: 10px 2px; color: var(--muted); font-size: 12.5px; }
 
 /* connect */
@@ -225,23 +230,22 @@ function render(){
     const [rest, soon] = j.until ? left(j.until) : ['', false];
     const starting = j.state === 'pending';
     const sess = j.sessions || [];
-    const sessBits = sess.length
-      ? [`⚡ ${sess.length} ssm session${sess.length > 1 ? 's' : ''} — `]
-      : [h('span', {className: 'mut', textContent: 'no active ssm session'})];
-    sess.forEach((s, i) => { if (i) sessBits.push(h('span', {className: 'mut', textContent: '  ·  '})); sessBits.push(sessLine(s)); });
+    const sessCol = sess.length
+      ? sess.map(s => sessLine(s))
+      : [h('span', {className: 'mut', textContent: 'no session'})];
     const r = h('div', {className: 'machine' + (picked === j.id ? ' picked' : '') + (starting ? ' down' : '')},
       h('span', {className: 'led'}),
       h('span', {className: 'top'},
         h('span', {className: 'iid', textContent: j.id}),
         h('span', {className: 'tag on', textContent: starting ? 'starting' : j.state}),
         h('span', {className: 'tag', textContent: 'EC2 jump'})),
+      h('span', {className: 'sess'}, ...sessCol),
       h('span', {className: 'act'},
         h('button', {className: 'btn btn-small', textContent: '+' + hours(cfg.extend_minutes), title: 'Keep it up longer',
           onclick: e => { e.stopPropagation(); extend(j); }}),
         h('button', {className: 'btn-danger', textContent: 'Terminate', onclick: e => { e.stopPropagation(); terminate(j); }})),
       h('span', {className: 'meta'}, `${j.network} · by ${j.by || '?'} · `,
-        h('span', {className: soon ? 'soon' : '', textContent: rest || '…'})),
-      h('span', {className: 'sess'}, ...sessBits));
+        h('span', {className: soon ? 'soon' : '', textContent: rest || '…'})));
     r.onclick = () => { picked = j.id; loadTargets(j.vpc); fillTargets(); renderConnect(); render(); };
     return r;
   }));

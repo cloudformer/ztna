@@ -48,7 +48,7 @@
   <text x="74" y="276" class="step">localhost:3306 → the jump,</text>
   <text x="74" y="291" class="step">over the SSM tunnel:</text>
   <text x="74" y="309" class="step">• map one port, or</text>
-  <text x="74" y="324" class="step">• route all (VPN-like)</text>
+  <text x="74" y="324" class="step">• route all (SOCKS)</text>
   <text x="44" y="372" class="sub">No inbound, no SSH key —</text>
   <text x="44" y="388" class="sub">IAM + SSM is the gate.</text>
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2 — 2026-11-24
+
+- The machine card splits in two: machine on the left (id · state · network · lease), its live SSM sessions as
+  their own right-hand column, one per line — left is the box, right is who is connected through it.
+- Docs caught up: SOCKS naming everywhere, console.svg redrawn to the moss UI, the sessions column included.
+
 ## 0.2.1 — 2026-11-24
 
 - The console redesigned: mission-control panels in a soft moss-green terminal palette (low contrast, mono
