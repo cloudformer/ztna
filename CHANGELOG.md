@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4 — 2026-11-24
+
+- The header buttons (theme toggle, Sign out) get a visible border and fill, and a brighter hover — they read
+  as buttons at rest, not only when found by the cursor.
+
 ## 0.2.3 — 2026-11-24
 
 - Charcoal theme (picked 3c of four shades) as the default, with a ☀/☾ toggle in the header: light = the

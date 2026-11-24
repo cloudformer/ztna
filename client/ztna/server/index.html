@@ -23,6 +23,11 @@ body { font-family: var(--mono); font-size: 13.5px; }
 .bar, .status { padding-inline: max(16px, calc((100% - var(--width)) / 2)); }
 .brand .logo { color: var(--accent); }
 
+/* header buttons (theme toggle, sign out): visible at rest, brighter on hover */
+.bar .tb { border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); color: var(--bar-text);
+  border-radius: 6px; padding: 5px 13px; font: 600 12px var(--mono); cursor: pointer; }
+.bar .tb:hover { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.55); color: #fff; }
+
 /* panels: a head strip + body, mission-control style */
 .panel { padding: 0; }
 .phead { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding: 8px 16px;
