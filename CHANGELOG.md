@@ -2,12 +2,21 @@
 
 ## 0.2.0 — 2026-11-23
 
+- The console redesigned: mission-control panels in a soft moss-green terminal palette (low contrast, mono
+  throughout). Jumps render as machine cards that say what they are — EC2 · state · network · lease — and
+  carry their live SSM sessions.
+- Every jump lists its **active SSM sessions** (`ssm:DescribeSessions`, read-only): who, mode, target, minutes.
+  Generated commands carry `--reason ztna:<user>:<mode>:<browser token>:<target>`; the token is 6 random chars
+  minted once per browser, so the list marks the sessions started from your machine as YOU. Port-forward and
+  SOCKS sessions both show; sessions opened outside the console still list by their IAM owner.
+- Modes renamed to the proper terms: **Port forward** and **SOCKS proxy** (`ssh -D`, dynamic forwarding). In
+  SOCKS mode the Target dropdown is disabled — the target is all traffic, 0.0.0.0/0 through the jump.
 - Launch by picking a VPC and a subnet, discovered live (`GET /api/networks`), instead of network profiles
   hand-written in Terraform: the jump gets the VPC's default security group, and a public IP exactly when the
   subnet assigns them. The `networks` / `default_network` variables are gone from the module and the caller.
 - The map-mode Target dropdown now lists the RDS and ElastiCache endpoints of the picked jump's VPC
   (`GET /api/targets?vpc=…`), with the `targets` variable kept as static extras; a custom host:port still works.
-- The VPN-like command pushes your SSH key first (`aws ec2-instance-connect send-ssh-public-key`, valid 60 s):
+- The SOCKS command pushes your SSH key first (`aws ec2-instance-connect send-ssh-public-key`, valid 60 s):
   the jump ships no authorized keys, so the bare `ssh -D` was always `Permission denied` — found on the first
   real connect. Map mode is pure SSM port forwarding and never needed a key.
 - A Profile box next to the mode switch: filled in, every generated command carries `--profile <name>`, so it

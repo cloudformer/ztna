@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from conftest import FakeEC2, FakeElastiCache, FakeRDS, FakeS3, basic
+from conftest import NOW, FakeEC2, FakeElastiCache, FakeRDS, FakeS3, FakeSSM, basic
 from ztna.server import lambda_function as lf
 
 
@@ -14,6 +14,7 @@ def aws(monkeypatch):
     monkeypatch.setattr(lf, "s3", s3)
     monkeypatch.setattr(lf, "rds", FakeRDS())
     monkeypatch.setattr(lf, "elasticache", FakeElastiCache())
+    monkeypatch.setattr(lf, "ssm", FakeSSM())
     return ec2, s3
 
 
@@ -106,6 +107,19 @@ def test_unknown_subnet_is_not_found(aws):
 def test_max_jumps(aws):
     start(); start()
     assert start()[0] == 409 and len(jumps()) == 2       # MAX_JUMPS = 2
+
+
+def test_jumps_carry_their_active_ssm_sessions(aws):
+    j = start()[1]
+    lf.ssm.sessions.append({"SessionId": "frank-abc123", "Target": j["id"], "Owner": "arn:aws:iam::123:user/frank",
+                            "Reason": "ztna:frank:map:x7k2q9:db-a.example.com:3306", "StartDate": NOW,
+                            "DocumentName": "AWS-StartPortForwardingSessionToRemoteHost"})
+    got = jumps()[0]["sessions"]
+    assert len(got) == 1 and got[0]["owner"] == "frank" and got[0]["id"] == "frank-abc123"
+    assert got[0]["reason"] == "ztna:frank:map:x7k2q9:db-a.example.com:3306"
+    assert jumps()[0]["sessions"] == got                      # another jump's sessions stay separate
+    other = start("subnet-bbbb2222")[1]
+    assert [x for x in call("GET", "/api/jumps")[1]["jumps"] if x["id"] == other["id"]][0]["sessions"] == []
 
 
 def test_extend_moves_the_lease(aws):

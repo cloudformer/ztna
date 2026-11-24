@@ -7,40 +7,78 @@
 <style>
 /* idlefree-ui */
 
-/* ---- ztna ---- */
-:root { --width: 1000px; }
+/* ---- ztna: moss terminal (soft matrix) — panel layout, mono everywhere ---- */
+:root {
+  --bg:#181d18; --panel:#1f251f; --panel2:#242b24; --line:#2f392f; --line2:#3b473b;
+  --text:#c9d6c6; --muted:#8a9a88; --faint:#5f6f5e;
+  --accent:#a3cc85; --accent-bg:#233021; --accent-text:#bfe3a3;
+  --ok:#a3cc85; --err:#cc8e8e; --err-bg:#2e2121; --warn:#d4bf80;
+  --bar:#151a15; --bar-text:#aebfab; --bar-muted:#8a9a88;
+  --code-bg:#151a15; --code-text:#e6efe2; --code-ok:#a3cc85; --code-err:#cc8e8e;
+  --width: 1020px;
+}
+body { font-family: var(--mono); font-size: 13.5px; }
 .page { max-width: calc(var(--width) + 32px); margin-inline: auto; }
 .bar, .status { padding-inline: max(16px, calc((100% - var(--width)) / 2)); }
-.panel { padding: 14px 16px; }
-.field { display: inline-flex; align-items: center; gap: 6px; }
-.field select { padding: 5px 8px; }
-.start-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.brand .logo { color: var(--accent); }
+
+/* panels: a head strip + body, mission-control style */
+.panel { padding: 0; }
+.phead { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding: 8px 16px;
+  font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+.phead::before { content: ""; width: 7px; height: 7px; background: var(--accent); flex: none; }
+.phead .sub { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); margin-left: auto; font-size: 11.5px; }
+.pbody { padding: 13px 16px 15px; }
+
+.field { display: inline-flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field .hint { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.field select, .field input { padding: 7px 10px; background: var(--code-bg); border-color: var(--line2); font-size: 13px; }
+.start-row, .ctl { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
 .start-row .spacer { flex: 1; }
-.rows { display: flex; flex-direction: column; margin-top: 10px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.start-row .sum { color: var(--muted); font-size: 11.5px; align-self: center; }
+.btn-primary { letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+
+/* jump machines */
+.rows { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .rows:empty { display: none; }
-.row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 9px 12px;
-  border-bottom: 1px solid var(--line); cursor: pointer; font-size: 13px; background: var(--panel); }
-.row:last-child { border-bottom: none; }
-.row:hover { background: var(--panel2); }
-.row.picked { background: var(--accent-bg); }
-.row .id { font: 12px var(--mono); }
-.row .meta { color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row .left { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
-.row .left.soon { color: var(--err); font-weight: 600; }
-.row .act { display: flex; gap: 6px; justify-content: flex-end; }
-.empty-row { padding: 10px 12px; color: var(--muted); font-size: 13px; }
-.connect { display: grid; gap: 10px; }
-.connect .who { color: var(--muted); font-size: 13px; }
-.connect .who b { color: var(--text); }
-.seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 8px; overflow: hidden; }
-.seg button { border: none; background: none; padding: 6px 14px; font: inherit; font-size: 13px; color: var(--muted); cursor: pointer; border-right: 1px solid var(--line2); }
+.machine { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 3px 14px; align-items: center;
+  border: 1px solid var(--line2); border-left: 3px solid var(--ok); border-radius: 4px;
+  background: var(--code-bg); padding: 11px 14px; cursor: pointer; }
+.machine:hover { background: var(--panel2); }
+.machine.picked { border-color: var(--accent); }
+.machine.down { border-left-color: var(--faint); }
+.machine .led { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); grid-row: span 3; align-self: start; margin-top: 4px; }
+.machine.down .led { background: var(--faint); }
+.machine .top { min-width: 0; }
+.machine .iid { font-weight: 600; color: var(--code-text); font-size: 13.5px; }
+.machine .tag { border: 1px solid var(--line2); color: var(--muted); border-radius: 2px; padding: 0 6px;
+  margin-left: 8px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.machine .tag.on { color: var(--ok); border-color: var(--ok); }
+.machine .meta { color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.machine .meta b { color: var(--text); font-weight: 500; }
+.machine .meta .soon { color: var(--err); font-weight: 600; }
+.machine .sess { color: var(--warn); font-size: 12px; min-width: 0; }
+.machine .sess .mut { color: var(--faint); }
+.machine .sess .you { color: var(--accent); border: 1px solid var(--accent); border-radius: 2px;
+  padding: 0 5px; font-size: 10px; letter-spacing: .08em; margin-left: 6px; }
+.machine .act { grid-row: span 3; display: flex; gap: 7px; align-self: start; }
+.empty-row { padding: 10px 2px; color: var(--muted); font-size: 12.5px; }
+
+/* connect */
+.connect-grid { display: grid; gap: 10px; }
+.who { color: var(--muted); font-size: 12.5px; }
+.who b { color: var(--text); }
+.seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 4px; overflow: hidden; }
+.seg button { border: none; background: var(--code-bg); padding: 7px 16px; font: 700 11.5px var(--mono);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted); cursor: pointer; border-right: 1px solid var(--line2); }
 .seg button:last-child { border-right: none; }
-.seg button.on { background: var(--accent-bg); color: var(--accent-text); font-weight: 600; }
-.ctl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.ctl select, .ctl input { padding: 6px 9px; }
-.ctl input { font: 12px var(--mono); min-width: 170px; }
+.seg button.on { background: var(--accent); color: #131810; }
+.ctl select:disabled { color: var(--faint); border-style: dashed; }
+.ctl input { font: 12px var(--mono); }
+.ctl #custom { min-width: 170px; }
 .cmd { position: relative; }
-.cmd pre { margin: 0; padding: 11px 12px; border-radius: 8px; background: var(--code-bg); color: var(--code-text);
+.cmd pre { margin: 0; padding: 11px 12px; border-radius: 4px; background: var(--code-bg);
+  border: 1px solid var(--line); border-left: 3px solid var(--accent); color: var(--code-text);
   font: 12px/1.7 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 .cmd .copy { position: absolute; top: 8px; right: 8px; }
 .note { color: var(--muted); font-size: 12px; }
@@ -48,39 +86,45 @@
 </head>
 <body>
 <header class="bar">
-  <span class="brand"><span class="logo">🛡</span>ztna</span>
+  <span class="brand"><span class="logo">⬢</span>ztna</span>
   <span class="meta"><span class="k">Endpoint</span><span class="chip" id="info-host">-</span></span>
-  <span class="meta" id="who-meta" hidden><span class="k">Signed in</span><span class="chip" id="who">-</span></span>
+  <span class="meta" id="who-meta" hidden><span class="k">Operator</span><span class="chip" id="who">-</span></span>
   <span class="spacer"></span>
   <button class="tb" id="logout">Sign out</button>
 </header>
 
 <div class="page">
   <section class="panel">
-    <div class="start-row">
-      <label class="field"><span class="hint">VPC</span><select id="vpc"></select></label>
-      <label class="field"><span class="hint">Subnet</span><select id="subnet"></select></label>
-      <label class="field"><span class="hint">For</span><select id="duration"></select></label>
-      <button class="btn btn-primary" id="power-on">⏻ Start jump</button>
-      <span class="spacer"></span>
-      <span class="hint" id="jumps-sum"></span>
+    <div class="phead">Launch<span class="sub">place the EC2 jump · VPCs and subnets discovered live</span></div>
+    <div class="pbody">
+      <div class="start-row">
+        <label class="field"><span class="hint">VPC</span><select id="vpc"></select></label>
+        <label class="field"><span class="hint">Subnet</span><select id="subnet"></select></label>
+        <label class="field"><span class="hint">Lease</span><select id="duration"></select></label>
+        <button class="btn btn-primary" id="power-on">⏻ Launch jump</button>
+        <span class="spacer"></span>
+        <span class="sum" id="jumps-sum"></span>
+      </div>
+      <div class="rows" id="jumps"></div>
     </div>
-    <div class="rows" id="jumps"></div>
   </section>
 
-  <section class="panel connect">
-    <div class="who" id="who-jump">Start a jump, then pick it to connect.</div>
-    <div class="ctl">
-      <div class="seg" id="mode" role="radiogroup" aria-label="Mode">
-        <button data-m="map" class="on" type="button">Map</button>
-        <button data-m="vpn" type="button">VPN-like</button>
+  <section class="panel">
+    <div class="phead">Connect<span class="sub">through SSM · no inbound · the command runs on your machine</span></div>
+    <div class="pbody connect-grid">
+      <div class="who" id="who-jump">Launch a jump, then pick it to connect.</div>
+      <div class="ctl">
+        <div class="seg" id="mode" role="radiogroup" aria-label="Mode">
+          <button data-m="map" class="on" type="button">Port forward</button>
+          <button data-m="socks" type="button">SOCKS proxy</button>
+        </div>
+        <label class="field" id="target-field"><span class="hint">Target</span><select id="target"></select></label>
+        <input id="custom" placeholder="db-host:3306" hidden>
+        <label class="field"><span class="hint">AWS profile</span><input id="profile" placeholder="default" size="8"></label>
       </div>
-      <label class="field" id="target-field"><span class="hint">Target</span><select id="target"></select></label>
-      <input id="custom" placeholder="db-host:3306" hidden>
-      <label class="field"><span class="hint">Profile</span><input id="profile" placeholder="default" size="8"></label>
+      <div class="cmd"><button class="btn btn-small copy" id="copy">Copy</button><pre id="cmd"># launch a jump first</pre></div>
+      <div class="note" id="hint"></div>
     </div>
-    <div class="cmd"><button class="btn btn-small copy" id="copy">Copy</button><pre id="cmd"># start a jump first</pre></div>
-    <div class="note" id="hint"></div>
   </section>
 </div>
 
@@ -114,8 +158,14 @@ const store = {
 };
 let cred = store.get('cred') || '';
 $('#info-host').textContent = location.host;
-let cfg = null, jumps = [], picked = null, mode = 'map';
+let cfg = null, jumps = [], picked = null, mode = 'map', me = '';
 const POLL_MS = 4000;
+
+// one 6-char token per browser: every command this page generates carries it in --reason,
+// so the sessions list can mark the connections that came from this machine as YOU
+let tok = store.get('tok');
+if (!tok){ const a = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  tok = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => a[b % 36]).join(''); store.set('tok', tok); }
 
 // ---- sign-in ----
 function askCred(){
@@ -153,28 +203,48 @@ $('#status').onclick = e => { if (e.target.closest('a')) return; historyOpen = !
 function short(id){ return id.replace('i-', '').slice(0, 8); }
 function hours(m){ return m % 60 ? `${m} min` : `${m / 60} h`; }
 function left(until){ const s = Math.max(0, Math.round((new Date(until) - new Date()) / 1000));
-  return [s >= 3600 ? `${Math.floor(s/3600)} h ${String(Math.floor(s/60)%60).padStart(2,'0')} min left` : `${Math.ceil(s/60)} min left`, s < 600]; }
+  return [s >= 3600 ? `${Math.floor(s/3600)}h ${String(Math.floor(s/60)%60).padStart(2,'0')}m left` : `${Math.ceil(s/60)} min left`, s < 600]; }
+function mins(t){ return Math.max(0, Math.round((Date.now() - new Date(t)) / 60000)); }
+
+// a session line: who · mode · target · how long, YOU when its --reason carries this browser's token
+function sessLine(s){
+  const m = /^ztna:([^:]+):(map|socks):([a-z0-9]{6})(?::(.*))?$/.exec(s.reason || '');
+  const label = m ? `${m[1]} · ${m[2]}${m[4] ? ' ' + m[4] : ''}` : (s.owner || 'unknown');
+  const line = h('span', {}, `${label} · ${mins(s.started)} min`);
+  if (m && m[3] === tok) line.append(h('span', {className: 'you', textContent: 'YOU'}));
+  return line;
+}
 
 // ---- jumps list ----
 function render(){
   const up = jumps.filter(j => j.state === 'running' || j.state === 'pending');
-  $('#jumps-sum').textContent = `${up.length} up · at most ${cfg.max_jumps} · each terminates after ${cfg.idle_shutdown_minutes} min idle`;
+  $('#jumps-sum').textContent = `${up.length} / ${cfg.max_jumps} up · idle ${cfg.idle_shutdown_minutes} min → terminated`;
   $('#power-on').disabled = up.length >= cfg.max_jumps;
   $('#jumps').replaceChildren(...jumps.map(j => {
     const [rest, soon] = j.until ? left(j.until) : ['', false];
     const starting = j.state === 'pending';
-    const acts = [h('button', {className: 'btn btn-small', textContent: '+' + hours(cfg.extend_minutes), title: 'Keep it up longer',
-                    onclick: e => { e.stopPropagation(); extend(j); }}),
-                  h('button', {className: 'btn-danger', textContent: 'Terminate', onclick: e => { e.stopPropagation(); terminate(j); }})];
-    const r = h('div', {className: 'row' + (picked === j.id ? ' picked' : '')},
-      h('span', {className: 'id', textContent: short(j.id)}),
-      h('span', {className: 'meta', textContent: `${j.network} · ${j.id}${starting ? ' · starting' : ''} · ${j.by || ''}`}),
-      h('span', {className: 'left' + (soon ? ' soon' : ''), textContent: rest}),
-      h('span', {className: 'act'}, ...acts));
+    const sess = j.sessions || [];
+    const sessBits = sess.length
+      ? [`⚡ ${sess.length} ssm session${sess.length > 1 ? 's' : ''} — `]
+      : [h('span', {className: 'mut', textContent: 'no active ssm session'})];
+    sess.forEach((s, i) => { if (i) sessBits.push(h('span', {className: 'mut', textContent: '  ·  '})); sessBits.push(sessLine(s)); });
+    const r = h('div', {className: 'machine' + (picked === j.id ? ' picked' : '') + (starting ? ' down' : '')},
+      h('span', {className: 'led'}),
+      h('span', {className: 'top'},
+        h('span', {className: 'iid', textContent: j.id}),
+        h('span', {className: 'tag on', textContent: starting ? 'starting' : j.state}),
+        h('span', {className: 'tag', textContent: 'EC2 jump'})),
+      h('span', {className: 'act'},
+        h('button', {className: 'btn btn-small', textContent: '+' + hours(cfg.extend_minutes), title: 'Keep it up longer',
+          onclick: e => { e.stopPropagation(); extend(j); }}),
+        h('button', {className: 'btn-danger', textContent: 'Terminate', onclick: e => { e.stopPropagation(); terminate(j); }})),
+      h('span', {className: 'meta'}, `${j.network} · by ${j.by || '?'} · `,
+        h('span', {className: soon ? 'soon' : '', textContent: rest || '…'})),
+      h('span', {className: 'sess'}, ...sessBits));
     r.onclick = () => { picked = j.id; loadTargets(j.vpc); fillTargets(); renderConnect(); render(); };
     return r;
   }));
-  if (!jumps.length) $('#jumps').replaceChildren(h('div', {className: 'empty-row', textContent: 'No jump up. Start one above.'}));
+  if (!jumps.length) $('#jumps').replaceChildren(h('div', {className: 'empty-row', textContent: 'No jump up. Launch one above — it lands in the subnet you picked.'}));
 }
 
 // ---- connect ----
@@ -188,10 +258,10 @@ function fillTargets(){
   if (mode === 'map'){
     const j = jumps.find(x => x.id === picked);
     const list = (j && targetCache[j.vpc]) || [];
-    $('#target').replaceChildren(...list.map(t => h('option', {value: t, textContent: t})), h('option', {value: '__c', textContent: '自定义…'}));
-    $('#target').disabled = false; $('#target-field').style.display = '';
+    $('#target').replaceChildren(...list.map(t => h('option', {value: t, textContent: t})), h('option', {value: '__c', textContent: 'custom…'}));
+    $('#target').disabled = false;
   } else {
-    $('#target').replaceChildren(h('option', {textContent: 'all · 0.0.0.0/0 → SOCKS :1080'}));
+    $('#target').replaceChildren(h('option', {textContent: 'all traffic · 0.0.0.0/0 → 127.0.0.1:1080'}));
     $('#target').disabled = true; $('#custom').hidden = true;
   }
 }
@@ -199,25 +269,27 @@ function tval(){ return $('#target').value === '__c' ? $('#custom').value.trim()
 function renderConnect(){
   const j = jumps.find(x => x.id === picked);
   $('#custom').hidden = !(mode === 'map' && $('#target').value === '__c');
-  if (!j){ $('#who-jump').textContent = 'Start a jump, then pick it to connect.'; $('#cmd').textContent = '# pick a jump'; $('#hint').textContent = ''; return; }
-  $('#who-jump').innerHTML = `Connect · <b>${short(j.id)}</b> · ${j.network} · ${j.id}`;
+  if (!j){ $('#who-jump').textContent = 'Launch a jump, then pick it to connect.'; $('#cmd').textContent = '# launch a jump first'; $('#hint').textContent = ''; return; }
+  $('#who-jump').innerHTML = `Connect · <b>${j.id}</b> · ${j.network}`;
   const region = (cfg.region ? ` --region ${cfg.region}` : '')
                + ($('#profile').value.trim() ? ` --profile ${$('#profile').value.trim()}` : '');
   if (mode === 'map'){
     const t = (tval() || 'host:port'), [host, port] = t.split(':');
+    const reason = ` --reason ztna:${me || 'unknown'}:map:${tok}:${t || 'host:port'}`;
     $('#cmd').textContent =
-`aws ssm start-session --target ${j.id}${region} \\
+`aws ssm start-session --target ${j.id}${region}${reason} \\
   --document-name AWS-StartPortForwardingSessionToRemoteHost \\
   --parameters host=${host || 'host'},portNumber=${port || 'PORT'},localPortNumber=${port || 'PORT'}`;
-    $('#hint').textContent = `localhost:${port || 'PORT'} = ${host || 'host'}（through ${short(j.id)}）`;
+    $('#hint').textContent = `localhost:${port || 'PORT'} = ${host || 'host'} (through ${short(j.id)}). The --reason tag is how the list above recognizes your sessions.`;
   } else {
+    const reason = ` --reason ztna:${me || 'unknown'}:socks:${tok}:all`;
     $('#cmd').textContent =
 `aws ec2-instance-connect send-ssh-public-key --instance-id ${j.id}${region} \\
   --instance-os-user ${cfg.ssh_user} --ssh-public-key file://$HOME/.ssh/id_ed25519.pub && \\
 ssh -N -D 1080 \\
-  -o ProxyCommand="aws ssm start-session --target ${j.id}${region} --document-name AWS-StartSSHSession --parameters portNumber=22" \\
+  -o ProxyCommand="aws ssm start-session --target ${j.id}${region}${reason} --document-name AWS-StartSSHSession --parameters portNumber=22" \\
   ${cfg.ssh_user}@${j.id}`;
-    $('#hint').textContent = `SOCKS5 on 127.0.0.1:1080 — point your browser/apps here (all traffic via ${short(j.id)}). The first command pushes your key for 60 s (EC2 Instance Connect); sshd on the jump still checks it.`;
+    $('#hint').textContent = `All traffic: SOCKS5 on 127.0.0.1:1080 — point your browser/apps there. The first command authorizes your key for 60 s (nothing long-lived stays on the jump); reconnecting = run the whole line again.`;
   }
 }
 $('#mode').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.m;
@@ -268,7 +340,8 @@ async function start(){
   $('#duration').replaceChildren(...cfg.durations.map(m => h('option', {value: m, textContent: hours(m)})));
   $('#duration').value = cfg.default_minutes;
   fillTargets(); renderConnect();
-  const me = await api('/api/me'); $('#who').textContent = me.identity; $('#who-meta').hidden = false;
+  const d = await api('/api/me'); me = d.identity; $('#who').textContent = me; $('#who-meta').hidden = false;
+  renderConnect();
   poll();
 }
 renderHistory();

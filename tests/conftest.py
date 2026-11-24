@@ -107,6 +107,17 @@ class FakeElastiCache:
              "CacheNodes": [{"Endpoint": {"Address": "redis-a.abc.cache.example.com", "Port": 6379}}]}]}
 
 
+class FakeSSM:
+    """Active SSM sessions per target instance; tests append to .sessions."""
+
+    def __init__(self):
+        self.sessions = []   # {"SessionId", "Target", "Owner", "Reason", "StartDate", "DocumentName"}
+
+    def describe_sessions(self, State, Filters):
+        target = next(f["value"] for f in Filters if f["key"] == "Target")
+        return {"Sessions": [x for x in self.sessions if x["Target"] == target]}
+
+
 class FakeS3:
     class exceptions:
         NoSuchKey = type("NoSuchKey", (Exception,), {})

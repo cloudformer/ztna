@@ -22,7 +22,9 @@ Sign-in: two methods, each on or off; a request passes when any method that is o
     GET  /api/config                 durations, idle shutdown, region, version
     GET  /api/networks               the VPCs and their subnets, discovered live (the launch dropdowns)
     GET  /api/targets?vpc=vpc-…      RDS + ElastiCache endpoints in that VPC, plus the static extras (map-mode dropdown)
-    GET  /api/jumps                  the running jumps, newest first, each with its lease end
+    GET  /api/jumps                  the running jumps, newest first, each with its lease end and its active SSM
+                                     sessions (owner, reason, start) — the page marks sessions whose --reason carries
+                                     its own browser token (ztna:<user>:<mode>:<6 chars>) as yours
     POST /api/jumps                  {"subnet", "minutes"}: launch a jump into that subnet for that long
     POST /api/jumps/<id>/extend      its lease + 1 hour, never past MAX_SESSION_MINUTES after launch
     POST /api/jumps/<id>/stop        terminate it
@@ -81,6 +83,7 @@ ec2 = boto3.client("ec2")
 s3 = boto3.client("s3")
 rds = boto3.client("rds")
 elasticache = boto3.client("elasticache")
+ssm = boto3.client("ssm")
 
 
 class BadRequest(Exception):
@@ -273,8 +276,19 @@ def targets(event):
     return {"targets": merged}
 
 
+def _sessions(jump_id):
+    """The active SSM sessions on that jump: who is connected right now."""
+    try:
+        found = ssm.describe_sessions(State="Active", Filters=[{"key": "Target", "value": jump_id}])["Sessions"]
+    except Exception:  # noqa: BLE001  (a jump with sessions unreadable still lists)
+        return []
+    return [{"id": x.get("SessionId", ""), "owner": x.get("Owner", "").rsplit("/", 1)[-1],
+             "reason": x.get("Reason", ""), "started": x.get("StartDate"),
+             "document": x.get("DocumentName", "")} for x in found]
+
+
 def list_jumps(event):
-    return {"jumps": [_summary(i) for i in _running()]}
+    return {"jumps": [dict(_summary(i), sessions=_sessions(i["InstanceId"])) for i in _running()]}
 
 
 def start_jump(event):
