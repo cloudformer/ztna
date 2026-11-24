@@ -2,57 +2,57 @@
      font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace">
   <defs>
     <style>
-      .win    { fill: #181d18; stroke: #2f392f; stroke-width: 1.4; }
-      .bar    { fill: #151a15; }
-      .brand  { font-size: 16px; font-weight: 700; fill: #c9d6c6; }
-      .logo   { fill: #a3cc85; }
-      .k      { font-size: 10.5px; fill: #8a9a88; }
-      .chip   { fill: #1f251f; stroke: #3b473b; stroke-width: 1; }
-      .chipt  { font-size: 11.5px; fill: #c9d6c6; }
-      .panel  { fill: #1f251f; stroke: #2f392f; stroke-width: 1.2; }
-      .pheadln{ stroke: #2f392f; stroke-width: 1; }
-      .phead  { font-size: 10.5px; font-weight: 700; fill: #a3cc85; letter-spacing: 2.2px; }
-      .psub   { font-size: 10.5px; fill: #8a9a88; }
-      .sq     { fill: #a3cc85; }
-      .hint   { font-size: 9.5px; font-weight: 700; fill: #8a9a88; letter-spacing: 1.6px; }
-      .sel    { fill: #151a15; stroke: #3b473b; stroke-width: 1; }
-      .selt   { font-size: 11.5px; fill: #eef5ec; }
-      .caret  { fill: #8a9a88; }
-      .btn    { fill: #a3cc85; }
-      .btnt   { font-size: 11.5px; font-weight: 700; fill: #131810; letter-spacing: 1px; }
-      .btno   { fill: none; stroke: #3b473b; stroke-width: 1; }
-      .btnot  { font-size: 10.5px; font-weight: 600; fill: #c9d6c6; letter-spacing: .8px; }
-      .btnerr { fill: none; stroke: #cc8e8e; stroke-width: 1; }
-      .btnerrt{ font-size: 10.5px; font-weight: 600; fill: #cc8e8e; letter-spacing: .8px; }
-      .sum    { font-size: 10.5px; fill: #8a9a88; }
-      .machine{ fill: #151a15; stroke: #3b473b; stroke-width: 1; }
-      .mled   { fill: #a3cc85; }
-      .mbar   { fill: #a3cc85; }
-      .iid    { font-size: 12.5px; font-weight: 600; fill: #eef5ec; }
-      .tag    { fill: none; stroke: #3b473b; stroke-width: 1; }
-      .tagt   { font-size: 9px; fill: #8a9a88; letter-spacing: .8px; }
-      .tagon  { fill: none; stroke: #a3cc85; stroke-width: 1; }
-      .tagont { font-size: 9px; fill: #a3cc85; letter-spacing: .8px; }
-      .meta   { font-size: 11px; fill: #8a9a88; }
-      .metab  { font-size: 11px; fill: #c9d6c6; }
-      .sess   { font-size: 11px; fill: #d4bf80; }
-      .sessmut{ font-size: 11px; fill: #5f6f5e; }
-      .you    { fill: none; stroke: #a3cc85; stroke-width: 1; }
-      .yout   { font-size: 9px; fill: #a3cc85; letter-spacing: .8px; }
-      .who    { font-size: 11.5px; fill: #8a9a88; }
-      .whob   { font-size: 11.5px; font-weight: 600; fill: #c9d6c6; }
-      .seg    { fill: #151a15; stroke: #3b473b; stroke-width: 1; }
-      .segon  { fill: #a3cc85; }
-      .segont { font-size: 10.5px; font-weight: 700; fill: #131810; letter-spacing: 1px; }
-      .segt   { font-size: 10.5px; font-weight: 700; fill: #8a9a88; letter-spacing: 1px; }
-      .code   { fill: #151a15; stroke: #2f392f; stroke-width: 1; }
-      .cbar   { fill: #a3cc85; }
-      .cl     { font-size: 11.5px; fill: #eef5ec; }
-      .cp     { font-size: 11.5px; fill: #a3cc85; }
-      .note   { font-size: 11px; fill: #8a9a88; }
-      .status { fill: #151a15; stroke: #2f392f; stroke-width: 1; }
-      .st     { font-size: 11px; fill: #a3cc85; }
-      .ver    { font-size: 11px; fill: #8a9a88; }
+      .win    { fill: #353735; stroke: #4f534f; stroke-width: 1.4; }
+      .bar    { fill: #313331; }
+      .brand  { font-size: 16px; font-weight: 700; fill: #dcdfda; }
+      .logo   { fill: #aed38f; }
+      .k      { font-size: 10.5px; fill: #acb2aa; }
+      .chip   { fill: #3f413f; stroke: #5e635e; stroke-width: 1; }
+      .chipt  { font-size: 11.5px; fill: #dcdfda; }
+      .panel  { fill: #3f413f; stroke: #4f534f; stroke-width: 1.2; }
+      .pheadln{ stroke: #4f534f; stroke-width: 1; }
+      .phead  { font-size: 10.5px; font-weight: 700; fill: #aed38f; letter-spacing: 2.2px; }
+      .psub   { font-size: 10.5px; fill: #acb2aa; }
+      .sq     { fill: #aed38f; }
+      .hint   { font-size: 9.5px; font-weight: 700; fill: #acb2aa; letter-spacing: 1.6px; }
+      .sel    { fill: #313331; stroke: #5e635e; stroke-width: 1; }
+      .selt   { font-size: 11.5px; fill: #f7f9f6; }
+      .caret  { fill: #acb2aa; }
+      .btn    { fill: #aed38f; }
+      .btnt   { font-size: 11.5px; font-weight: 700; fill: #161c12; letter-spacing: 1px; }
+      .btno   { fill: none; stroke: #5e635e; stroke-width: 1; }
+      .btnot  { font-size: 10.5px; font-weight: 600; fill: #dcdfda; letter-spacing: .8px; }
+      .btnerr { fill: none; stroke: #d49898; stroke-width: 1; }
+      .btnerrt{ font-size: 10.5px; font-weight: 600; fill: #d49898; letter-spacing: .8px; }
+      .sum    { font-size: 10.5px; fill: #acb2aa; }
+      .machine{ fill: #313331; stroke: #5e635e; stroke-width: 1; }
+      .mled   { fill: #aed38f; }
+      .mbar   { fill: #aed38f; }
+      .iid    { font-size: 12.5px; font-weight: 600; fill: #f7f9f6; }
+      .tag    { fill: none; stroke: #5e635e; stroke-width: 1; }
+      .tagt   { font-size: 9px; fill: #acb2aa; letter-spacing: .8px; }
+      .tagon  { fill: none; stroke: #aed38f; stroke-width: 1; }
+      .tagont { font-size: 9px; fill: #aed38f; letter-spacing: .8px; }
+      .meta   { font-size: 11px; fill: #acb2aa; }
+      .metab  { font-size: 11px; fill: #dcdfda; }
+      .sess   { font-size: 11px; fill: #dcc88b; }
+      .sessmut{ font-size: 11px; fill: #848a81; }
+      .you    { fill: none; stroke: #aed38f; stroke-width: 1; }
+      .yout   { font-size: 9px; fill: #aed38f; letter-spacing: .8px; }
+      .who    { font-size: 11.5px; fill: #acb2aa; }
+      .whob   { font-size: 11.5px; font-weight: 600; fill: #dcdfda; }
+      .seg    { fill: #313331; stroke: #5e635e; stroke-width: 1; }
+      .segon  { fill: #aed38f; }
+      .segont { font-size: 10.5px; font-weight: 700; fill: #161c12; letter-spacing: 1px; }
+      .segt   { font-size: 10.5px; font-weight: 700; fill: #acb2aa; letter-spacing: 1px; }
+      .code   { fill: #313331; stroke: #4f534f; stroke-width: 1; }
+      .cbar   { fill: #aed38f; }
+      .cl     { font-size: 11.5px; fill: #f7f9f6; }
+      .cp     { font-size: 11.5px; fill: #aed38f; }
+      .note   { font-size: 11px; fill: #acb2aa; }
+      .status { fill: #313331; stroke: #4f534f; stroke-width: 1; }
+      .st     { font-size: 11px; fill: #aed38f; }
+      .ver    { font-size: 11px; fill: #acb2aa; }
     </style>
   </defs>
 

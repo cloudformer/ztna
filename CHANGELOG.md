@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3 — 2026-11-24
+
+- Charcoal theme (picked 3c of four shades) as the default, with a ☀/☾ toggle in the header: light = the
+  idlefree-ui default theme, remembered per browser.
+- One port on screen: the Target dropdown shows hosts only, and picking one drops its port into **Local port**.
+- Terminate asks first — a dialog with the instance id and how many active SSM sessions would drop; the safe
+  button has focus.
+
 ## 0.2.2 — 2026-11-24
 
 - The machine card splits in two: machine on the left (id · state · network · lease), its live SSM sessions as

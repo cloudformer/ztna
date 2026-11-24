@@ -7,15 +7,16 @@
 <style>
 /* idlefree-ui */
 
-/* ---- ztna: moss terminal (soft matrix) — panel layout, mono everywhere ---- */
-:root {
-  --bg:#181d18; --panel:#1f251f; --panel2:#242b24; --line:#2f392f; --line2:#3b473b;
-  --text:#c9d6c6; --muted:#8a9a88; --faint:#5f6f5e;
-  --accent:#a3cc85; --accent-bg:#233021; --accent-text:#bfe3a3;
-  --ok:#a3cc85; --err:#cc8e8e; --err-bg:#2e2121; --warn:#d4bf80;
-  --bar:#151a15; --bar-text:#aebfab; --bar-muted:#8a9a88;
-  --code-bg:#151a15; --code-text:#e6efe2; --code-ok:#a3cc85; --code-err:#cc8e8e;
-  --width: 1020px;
+/* ---- ztna: charcoal console — dark (default) is the charcoal below; ☀ switches to the idlefree-ui light theme ---- */
+:root { --warn: #b45309; --accent-fg: #ffffff; --inset: #f9fafb; --width: 1020px; }
+:root[data-theme="dark"] {
+  --bg:#353735; --panel:#3f413f; --panel2:#464846; --line:#4f534f; --line2:#5e635e;
+  --text:#dcdfda; --muted:#acb2aa; --faint:#848a81;
+  --accent:#aed38f; --accent-bg:#3d453a; --accent-text:#cde7b2;
+  --ok:#aed38f; --err:#d49898; --err-bg:#453737; --warn:#dcc88b;
+  --bar:#313331; --bar-text:#cacfc7; --bar-muted:#acb2aa;
+  --code-bg:#313331; --code-text:#f7f9f6; --code-ok:#aed38f; --code-err:#d49898;
+  --accent-fg:#161c12; --inset:#313331;
 }
 body { font-family: var(--mono); font-size: 13.5px; }
 .page { max-width: calc(var(--width) + 32px); margin-inline: auto; }
@@ -32,7 +33,7 @@ body { font-family: var(--mono); font-size: 13.5px; }
 
 .field { display: inline-flex; flex-direction: column; gap: 4px; min-width: 0; }
 .field .hint { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
-.field select, .field input { padding: 7px 10px; background: var(--code-bg); border-color: var(--line2); font-size: 13px; }
+.field select, .field input { padding: 7px 10px; background: var(--inset); border-color: var(--line2); font-size: 13px; }
 .start-row, .ctl { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
 .start-row .spacer { flex: 1; }
 .start-row .sum { color: var(--muted); font-size: 11.5px; align-self: center; }
@@ -43,7 +44,7 @@ body { font-family: var(--mono); font-size: 13.5px; }
 .rows:empty { display: none; }
 .machine { display: grid; grid-template-columns: auto minmax(0,1fr) auto auto; gap: 3px 14px; align-items: center;
   border: 1px solid var(--line2); border-left: 3px solid var(--ok); border-radius: 4px;
-  background: var(--code-bg); padding: 11px 14px; cursor: pointer; }
+  background: var(--inset); padding: 11px 14px; cursor: pointer; }
 .machine:hover { background: var(--panel2); }
 .machine.picked { border-color: var(--accent); }
 .machine.down { border-left-color: var(--faint); }
@@ -74,10 +75,10 @@ body { font-family: var(--mono); font-size: 13.5px; }
 .who { color: var(--muted); font-size: 12.5px; }
 .who b { color: var(--text); }
 .seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 4px; overflow: hidden; }
-.seg button { border: none; background: var(--code-bg); padding: 7px 16px; font: 700 11.5px var(--mono);
+.seg button { border: none; background: var(--inset); padding: 7px 16px; font: 700 11.5px var(--mono);
   letter-spacing: .12em; text-transform: uppercase; color: var(--muted); cursor: pointer; border-right: 1px solid var(--line2); }
 .seg button:last-child { border-right: none; }
-.seg button.on { background: var(--accent); color: #131810; }
+.seg button.on { background: var(--accent); color: var(--accent-fg); }
 .ctl select:disabled { color: var(--faint); border-style: dashed; }
 .ctl input { font: 12px var(--mono); }
 .ctl #custom { min-width: 170px; }
@@ -95,6 +96,7 @@ body { font-family: var(--mono); font-size: 13.5px; }
   <span class="meta"><span class="k">Endpoint</span><span class="chip" id="info-host">-</span></span>
   <span class="meta" id="who-meta" hidden><span class="k">Operator</span><span class="chip" id="who">-</span></span>
   <span class="spacer"></span>
+  <button class="tb" id="theme" title="Switch between the charcoal and light themes">☀ Light</button>
   <button class="tb" id="logout">Sign out</button>
 </header>
 
@@ -141,6 +143,18 @@ body { font-family: var(--mono); font-size: 13.5px; }
      title="What changed in each release">ztna __VERSION__</a>
 </footer>
 
+<dialog id="kill-dlg">
+  <form method="dialog">
+    <h3>Terminate jump?</h3>
+    <p class="note" id="kill-what" style="margin:0 0 4px"></p>
+    <p class="note" id="kill-sess" style="margin:0 0 10px"></p>
+    <div class="actions">
+      <button class="btn-danger" value="ok">Terminate</button>
+      <button class="btn" value="cancel" formnovalidate autofocus>Keep it</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="dlg">
   <form method="dialog">
     <h3>Sign in</h3>
@@ -164,6 +178,13 @@ const store = {
 };
 let cred = store.get('cred') || '';
 $('#info-host').textContent = location.host;
+
+// charcoal by default; ☀ switches to the idlefree-ui light theme, remembered per browser
+let theme = store.get('theme') || 'dark';
+function applyTheme(){ document.documentElement.dataset.theme = theme;
+  $('#theme').textContent = theme === 'dark' ? '☀ Light' : '☾ Dark'; }
+$('#theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; store.set('theme', theme); applyTheme(); };
+applyTheme();
 let cfg = null, jumps = [], picked = null, mode = 'map', me = '';
 const POLL_MS = 4000;
 
@@ -263,7 +284,10 @@ function fillTargets(){
   if (mode === 'map'){
     const j = jumps.find(x => x.id === picked);
     const list = (j && targetCache[j.vpc]) || [];
-    $('#target').replaceChildren(...list.map(t => h('option', {value: t, textContent: t})), h('option', {value: '__c', textContent: 'custom…'}));
+    // the option shows the host; its port lands in the Local port box (one port on screen, not two)
+    $('#target').replaceChildren(...list.map(t => { const i = t.lastIndexOf(':');
+      return h('option', {value: t, textContent: i > 0 ? t.slice(0, i) : t}); }),
+      h('option', {value: '__c', textContent: 'custom…'}));
     $('#target').disabled = false; $('#lport-field').hidden = false;
     syncLport();
   } else {
@@ -320,7 +344,18 @@ $('#power-on').onclick = async () => {
 };
 async function extend(j){ try { const d = await api(`/api/jumps/${j.id}/extend`, {method: 'POST'}); j.until = d.until; render();
   note(`jump ${short(j.id)} kept until ${new Date(d.until).toLocaleTimeString()}`, true); } catch(e) { note(e.message, false); } }
-async function terminate(j){ try { await api(`/api/jumps/${j.id}/stop`, {method: 'POST'}); note(`jump ${short(j.id)} terminating`, true); } catch(e) { note(e.message, false); } }
+function terminate(j){
+  const n = (j.sessions || []).length;
+  $('#kill-what').textContent = `${j.id} · ${j.network} — the instance is destroyed, nothing is kept.`;
+  $('#kill-sess').textContent = n ? `⚠ ${n} active SSM session${n > 1 ? 's' : ''} will drop.` : 'No active SSM session.';
+  const dlg = $('#kill-dlg'); dlg.returnValue = 'cancel';
+  dlg.onclose = async () => {
+    if (dlg.returnValue !== 'ok') return;
+    try { await api(`/api/jumps/${j.id}/stop`, {method: 'POST'}); note(`jump ${short(j.id)} terminating`, true); }
+    catch(e) { note(e.message, false); }
+  };
+  dlg.showModal();
+}
 $('#logout').onclick = () => { cred = ''; store.set('cred', null); note('signed out', true); };
 
 // ---- poll ----
