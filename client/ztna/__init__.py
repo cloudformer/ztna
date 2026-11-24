@@ -6,4 +6,4 @@ ztna.server is the Lambda (the web console and its API). The Terraform module cl
 deploys it along with the launch template, the network profiles and the IAM.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"

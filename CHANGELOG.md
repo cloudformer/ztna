@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 — 2026-11-23
+## 0.2.1 — 2026-11-24
 
 - The console redesigned: mission-control panels in a soft moss-green terminal palette (low contrast, mono
   throughout). Jumps render as machine cards that say what they are — EC2 · state · network · lease — and
@@ -13,6 +13,9 @@
   SOCKS mode the Target dropdown is disabled — the target is all traffic, 0.0.0.0/0 through the jump.
 - A **Local port** box in port-forward mode, prefilled with the target's own port: forward two databases at
   once by giving the second one another local port (db-a → 3306, db-b → 3307).
+
+## 0.2.0 — 2026-11-23
+
 - Launch by picking a VPC and a subnet, discovered live (`GET /api/networks`), instead of network profiles
   hand-written in Terraform: the jump gets the VPC's default security group, and a public IP exactly when the
   subnet assigns them. The `networks` / `default_network` variables are gone from the module and the caller.
