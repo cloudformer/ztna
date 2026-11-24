@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.5 — 2026-11-24
+
+- The Launch button's text follows the theme: deep green-black on the dark theme's light-green accent (white
+  text there was unreadable), white on the light theme's blue, hover included.
+- The terminate dialog's buttons are the same size, and the safe one reads **Cancel**.
+- The connect row is one format: every control (mode switch, Target, custom host, Local port, AWS profile)
+  the same height and type size, and the custom input carries a label like the rest.
+
 ## 0.2.4 — 2026-11-24
 
 - The header buttons (theme toggle, Sign out) get a visible border and fill, and a brighter hover — they read

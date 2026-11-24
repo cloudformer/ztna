@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ztna"
-version = "0.2.4"
+version = "0.2.5"
 description = "Zero-trust, on-demand access to private resources: a ≈ $0 Lambda console starts a stateless EC2 jump host you tunnel through over SSM, then terminate."
 readme = "README.md"
 requires-python = ">=3.9"

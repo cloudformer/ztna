@@ -42,7 +42,10 @@ body { font-family: var(--mono); font-size: 13.5px; }
 .start-row, .ctl { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
 .start-row .spacer { flex: 1; }
 .start-row .sum { color: var(--muted); font-size: 11.5px; align-self: center; }
-.btn-primary { letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+/* idlefree-ui hard-codes white text on the accent button: right on the light blue, wrong on the dark-theme
+   light green — the text follows the theme instead (white on light, deep green-black on dark) */
+.btn-primary { letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--accent-fg); }
+.btn-primary:hover:not(:disabled) { color: var(--accent-fg); }
 
 /* jump machines */
 .rows { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
@@ -85,7 +88,7 @@ body { font-family: var(--mono); font-size: 13.5px; }
 .seg button:last-child { border-right: none; }
 .seg button.on { background: var(--accent); color: var(--accent-fg); }
 .ctl select:disabled { color: var(--faint); border-style: dashed; }
-.ctl input { font: 12px var(--mono); }
+.ctl select, .ctl input, .ctl .seg button { height: 34px; box-sizing: border-box; font-size: 13px; }
 .ctl #custom { min-width: 170px; }
 .cmd { position: relative; }
 .cmd pre { margin: 0; padding: 11px 12px; border-radius: 4px; background: var(--code-bg);
@@ -93,6 +96,9 @@ body { font-family: var(--mono); font-size: 13.5px; }
   font: 12px/1.7 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 .cmd .copy { position: absolute; top: 8px; right: 8px; }
 .note { color: var(--muted); font-size: 12px; }
+
+/* dialog action buttons: the same size whichever class they carry */
+dialog .actions button { padding: 7px 16px; font-size: 13px; border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -131,7 +137,7 @@ body { font-family: var(--mono); font-size: 13.5px; }
           <button data-m="socks" type="button">SOCKS proxy</button>
         </div>
         <label class="field" id="target-field"><span class="hint">Target</span><select id="target"></select></label>
-        <input id="custom" placeholder="db-host:3306" hidden>
+        <label class="field" id="custom-field" hidden><span class="hint">Custom host:port</span><input id="custom" placeholder="db-host:3306"></label>
         <label class="field" id="lport-field"><span class="hint">Local port</span><input id="lport" size="5" inputmode="numeric"></label>
         <label class="field"><span class="hint">AWS profile</span><input id="profile" placeholder="default" size="8"></label>
       </div>
@@ -155,7 +161,7 @@ body { font-family: var(--mono); font-size: 13.5px; }
     <p class="note" id="kill-sess" style="margin:0 0 10px"></p>
     <div class="actions">
       <button class="btn-danger" value="ok">Terminate</button>
-      <button class="btn" value="cancel" formnovalidate autofocus>Keep it</button>
+      <button class="btn" value="cancel" formnovalidate autofocus>Cancel</button>
     </div>
   </form>
 </dialog>
@@ -297,7 +303,7 @@ function fillTargets(){
     syncLport();
   } else {
     $('#target').replaceChildren(h('option', {textContent: 'all traffic · 0.0.0.0/0 → 127.0.0.1:1080'}));
-    $('#target').disabled = true; $('#custom').hidden = true; $('#lport-field').hidden = true;
+    $('#target').disabled = true; $('#custom-field').hidden = true; $('#lport-field').hidden = true;
   }
 }
 // the local port follows the target's own port until you type your own (e.g. a second MySQL on 3307)
@@ -305,7 +311,7 @@ function syncLport(){ $('#lport').value = (tval().split(':')[1] || ''); }
 function tval(){ return $('#target').value === '__c' ? $('#custom').value.trim() : $('#target').value; }
 function renderConnect(){
   const j = jumps.find(x => x.id === picked);
-  $('#custom').hidden = !(mode === 'map' && $('#target').value === '__c');
+  $('#custom-field').hidden = !(mode === 'map' && $('#target').value === '__c');
   if (!j){ $('#who-jump').textContent = 'Launch a jump, then pick it to connect.'; $('#cmd').textContent = '# launch a jump first'; $('#hint').textContent = ''; return; }
   $('#who-jump').innerHTML = `Connect · <b>${j.id}</b> · ${j.network}`;
   const region = (cfg.region ? ` --region ${cfg.region}` : '')
