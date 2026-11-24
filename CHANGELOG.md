@@ -11,6 +11,8 @@
   SOCKS sessions both show; sessions opened outside the console still list by their IAM owner.
 - Modes renamed to the proper terms: **Port forward** and **SOCKS proxy** (`ssh -D`, dynamic forwarding). In
   SOCKS mode the Target dropdown is disabled — the target is all traffic, 0.0.0.0/0 through the jump.
+- A **Local port** box in port-forward mode, prefilled with the target's own port: forward two databases at
+  once by giving the second one another local port (db-a → 3306, db-b → 3307).
 - Launch by picking a VPC and a subnet, discovered live (`GET /api/networks`), instead of network profiles
   hand-written in Terraform: the jump gets the VPC's default security group, and a public IP exactly when the
   subnet assigns them. The `networks` / `default_network` variables are gone from the module and the caller.

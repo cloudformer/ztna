@@ -120,6 +120,7 @@ body { font-family: var(--mono); font-size: 13.5px; }
         </div>
         <label class="field" id="target-field"><span class="hint">Target</span><select id="target"></select></label>
         <input id="custom" placeholder="db-host:3306" hidden>
+        <label class="field" id="lport-field"><span class="hint">Local port</span><input id="lport" size="5" inputmode="numeric"></label>
         <label class="field"><span class="hint">AWS profile</span><input id="profile" placeholder="default" size="8"></label>
       </div>
       <div class="cmd"><button class="btn btn-small copy" id="copy">Copy</button><pre id="cmd"># launch a jump first</pre></div>
@@ -259,12 +260,15 @@ function fillTargets(){
     const j = jumps.find(x => x.id === picked);
     const list = (j && targetCache[j.vpc]) || [];
     $('#target').replaceChildren(...list.map(t => h('option', {value: t, textContent: t})), h('option', {value: '__c', textContent: 'custom…'}));
-    $('#target').disabled = false;
+    $('#target').disabled = false; $('#lport-field').hidden = false;
+    syncLport();
   } else {
     $('#target').replaceChildren(h('option', {textContent: 'all traffic · 0.0.0.0/0 → 127.0.0.1:1080'}));
-    $('#target').disabled = true; $('#custom').hidden = true;
+    $('#target').disabled = true; $('#custom').hidden = true; $('#lport-field').hidden = true;
   }
 }
+// the local port follows the target's own port until you type your own (e.g. a second MySQL on 3307)
+function syncLport(){ $('#lport').value = (tval().split(':')[1] || ''); }
 function tval(){ return $('#target').value === '__c' ? $('#custom').value.trim() : $('#target').value; }
 function renderConnect(){
   const j = jumps.find(x => x.id === picked);
@@ -275,12 +279,13 @@ function renderConnect(){
                + ($('#profile').value.trim() ? ` --profile ${$('#profile').value.trim()}` : '');
   if (mode === 'map'){
     const t = (tval() || 'host:port'), [host, port] = t.split(':');
+    const lport = $('#lport').value.trim() || port;
     const reason = ` --reason ztna:${me || 'unknown'}:map:${tok}:${t || 'host:port'}`;
     $('#cmd').textContent =
 `aws ssm start-session --target ${j.id}${region}${reason} \\
   --document-name AWS-StartPortForwardingSessionToRemoteHost \\
-  --parameters host=${host || 'host'},portNumber=${port || 'PORT'},localPortNumber=${port || 'PORT'}`;
-    $('#hint').textContent = `localhost:${port || 'PORT'} = ${host || 'host'} (through ${short(j.id)}). The --reason tag is how the list above recognizes your sessions.`;
+  --parameters host=${host || 'host'},portNumber=${port || 'PORT'},localPortNumber=${lport || 'PORT'}`;
+    $('#hint').textContent = `localhost:${lport || 'PORT'} = ${host || 'host'}:${port || 'PORT'} (through ${short(j.id)}). Forwarding a second database at the same time? Give it another local port.`;
   } else {
     const reason = ` --reason ztna:${me || 'unknown'}:socks:${tok}:all`;
     $('#cmd').textContent =
@@ -294,8 +299,9 @@ ssh -N -D 1080 \\
 }
 $('#mode').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.m;
   $('#mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); fillTargets(); renderConnect(); });
-$('#target').onchange = renderConnect;
-$('#custom').oninput = renderConnect;
+$('#target').onchange = () => { syncLport(); renderConnect(); };
+$('#custom').oninput = () => { syncLport(); renderConnect(); };
+$('#lport').oninput = renderConnect;
 $('#profile').value = store.get('profile') || '';
 $('#profile').oninput = () => { store.set('profile', $('#profile').value.trim() || null); renderConnect(); };
 $('#copy').onclick = () => { navigator.clipboard?.writeText($('#cmd').textContent).then(() => note('command copied', true)).catch(() => {}); };
