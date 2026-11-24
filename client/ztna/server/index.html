@@ -58,7 +58,8 @@
 <div class="page">
   <section class="panel">
     <div class="start-row">
-      <label class="field"><span class="hint">Network</span><select id="network"></select></label>
+      <label class="field"><span class="hint">VPC</span><select id="vpc"></select></label>
+      <label class="field"><span class="hint">Subnet</span><select id="subnet"></select></label>
       <label class="field"><span class="hint">For</span><select id="duration"></select></label>
       <button class="btn btn-primary" id="power-on">⏻ Start jump</button>
       <span class="spacer"></span>
@@ -76,6 +77,7 @@
       </div>
       <label class="field" id="target-field"><span class="hint">Target</span><select id="target"></select></label>
       <input id="custom" placeholder="db-host:3306" hidden>
+      <label class="field"><span class="hint">Profile</span><input id="profile" placeholder="default" size="8"></label>
     </div>
     <div class="cmd"><button class="btn btn-small copy" id="copy">Copy</button><pre id="cmd"># start a jump first</pre></div>
     <div class="note" id="hint"></div>
@@ -169,16 +171,24 @@ function render(){
       h('span', {className: 'meta', textContent: `${j.network} · ${j.id}${starting ? ' · starting' : ''} · ${j.by || ''}`}),
       h('span', {className: 'left' + (soon ? ' soon' : ''), textContent: rest}),
       h('span', {className: 'act'}, ...acts));
-    r.onclick = () => { picked = j.id; renderConnect(); render(); };
+    r.onclick = () => { picked = j.id; loadTargets(j.vpc); fillTargets(); renderConnect(); render(); };
     return r;
   }));
   if (!jumps.length) $('#jumps').replaceChildren(h('div', {className: 'empty-row', textContent: 'No jump up. Start one above.'}));
 }
 
 // ---- connect ----
+const targetCache = {};            // vpc id -> endpoints the server discovered (RDS/ElastiCache + static extras)
+async function loadTargets(vpc){
+  if (!vpc || targetCache[vpc]) return;
+  try { targetCache[vpc] = (await api('/api/targets?vpc=' + vpc)).targets; } catch(e){ targetCache[vpc] = []; }
+  fillTargets(); renderConnect();
+}
 function fillTargets(){
   if (mode === 'map'){
-    $('#target').replaceChildren(...cfg.targets.map(t => h('option', {value: t, textContent: t})), h('option', {value: '__c', textContent: '自定义…'}));
+    const j = jumps.find(x => x.id === picked);
+    const list = (j && targetCache[j.vpc]) || [];
+    $('#target').replaceChildren(...list.map(t => h('option', {value: t, textContent: t})), h('option', {value: '__c', textContent: '自定义…'}));
     $('#target').disabled = false; $('#target-field').style.display = '';
   } else {
     $('#target').replaceChildren(h('option', {textContent: 'all · 0.0.0.0/0 → SOCKS :1080'}));
@@ -191,7 +201,8 @@ function renderConnect(){
   $('#custom').hidden = !(mode === 'map' && $('#target').value === '__c');
   if (!j){ $('#who-jump').textContent = 'Start a jump, then pick it to connect.'; $('#cmd').textContent = '# pick a jump'; $('#hint').textContent = ''; return; }
   $('#who-jump').innerHTML = `Connect · <b>${short(j.id)}</b> · ${j.network} · ${j.id}`;
-  const region = cfg.region ? ` --region ${cfg.region}` : '';
+  const region = (cfg.region ? ` --region ${cfg.region}` : '')
+               + ($('#profile').value.trim() ? ` --profile ${$('#profile').value.trim()}` : '');
   if (mode === 'map'){
     const t = (tval() || 'host:port'), [host, port] = t.split(':');
     $('#cmd').textContent =
@@ -201,22 +212,26 @@ function renderConnect(){
     $('#hint').textContent = `localhost:${port || 'PORT'} = ${host || 'host'}（through ${short(j.id)}）`;
   } else {
     $('#cmd').textContent =
-`ssh -N -D 1080 \\
+`aws ec2-instance-connect send-ssh-public-key --instance-id ${j.id}${region} \\
+  --instance-os-user ${cfg.ssh_user} --ssh-public-key file://$HOME/.ssh/id_ed25519.pub && \\
+ssh -N -D 1080 \\
   -o ProxyCommand="aws ssm start-session --target ${j.id}${region} --document-name AWS-StartSSHSession --parameters portNumber=22" \\
   ${cfg.ssh_user}@${j.id}`;
-    $('#hint').textContent = `SOCKS5 on 127.0.0.1:1080 — point your browser/apps here (all traffic via ${short(j.id)})`;
+    $('#hint').textContent = `SOCKS5 on 127.0.0.1:1080 — point your browser/apps here (all traffic via ${short(j.id)}). The first command pushes your key for 60 s (EC2 Instance Connect); sshd on the jump still checks it.`;
   }
 }
 $('#mode').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.m;
   $('#mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); fillTargets(); renderConnect(); });
 $('#target').onchange = renderConnect;
 $('#custom').oninput = renderConnect;
+$('#profile').value = store.get('profile') || '';
+$('#profile').oninput = () => { store.set('profile', $('#profile').value.trim() || null); renderConnect(); };
 $('#copy').onclick = () => { navigator.clipboard?.writeText($('#cmd').textContent).then(() => note('command copied', true)).catch(() => {}); };
 
 // ---- actions ----
 $('#power-on').onclick = async () => {
   $('#power-on').disabled = true;
-  try { const j = await api('/api/jumps', {method: 'POST', body: JSON.stringify({network: $('#network').value, minutes: +$('#duration').value})});
+  try { const j = await api('/api/jumps', {method: 'POST', body: JSON.stringify({subnet: $('#subnet').value, minutes: +$('#duration').value})});
     note(`jump ${short(j.id)} starting in ${j.network}, for ${hours(+$('#duration').value)}`, true);
     jumps.unshift(j); picked = j.id; render(); renderConnect();
   } catch(e) { note(e.message, false); render(); }
@@ -235,10 +250,21 @@ async function poll(){
   setTimeout(poll, POLL_MS);
 }
 
+let vpcs = [];
+function fillSubnets(){
+  const v = vpcs.find(x => x.id === $('#vpc').value);
+  $('#subnet').replaceChildren(...(v ? v.subnets : []).map(sn => h('option', {value: sn.id,
+    textContent: `${sn.name || sn.id} · ${sn.az} · ${sn.cidr}${sn.public ? ' · public' : ''}`})));
+}
+$('#vpc').onchange = fillSubnets;
+
 async function start(){
   cfg = await api('/api/config');
-  $('#network').replaceChildren(...cfg.networks.map(n => h('option', {value: n, textContent: n})));
-  $('#network').value = cfg.default_network;
+  api('/api/networks').then(r => { vpcs = r.vpcs;
+    $('#vpc').replaceChildren(...vpcs.map(v => h('option', {value: v.id,
+      textContent: `${v.name || v.id} · ${v.cidr}${v.default ? ' · default' : ''}`})));
+    fillSubnets();
+  }).catch(e => note(e.message, false));
   $('#duration').replaceChildren(...cfg.durations.map(m => h('option', {value: m, textContent: hours(m)})));
   $('#duration').value = cfg.default_minutes;
   fillTargets(); renderConnect();

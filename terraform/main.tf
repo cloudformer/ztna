@@ -6,8 +6,6 @@ module "ztna" {
   source = "../../terraform-aws-infra/modules/ztna" # local: this repo's working-tree module
 
   project_name          = var.project_name
-  networks              = var.networks
-  default_network       = var.default_network
   targets               = var.targets
   http_auth             = var.http_auth
   cloudflare_auth       = var.cloudflare_auth

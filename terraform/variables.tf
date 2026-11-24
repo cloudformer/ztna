@@ -19,17 +19,6 @@ variable "project_name" {
   type    = string
   default = "ztna"
 }
-variable "networks" {
-  type = map(object({
-    subnets            = list(string)
-    security_group_ids = list(string)
-    public             = optional(bool, false)
-  }))
-}
-variable "default_network" {
-  type    = string
-  default = ""
-}
 variable "targets" {
   type    = list(string)
   default = []

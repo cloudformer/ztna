@@ -1,7 +1,7 @@
 """ztna server: one Lambda behind a Function URL — starts and terminates on-demand EC2 jump hosts you tunnel through.
 
-A jump is one EC2 instance launched from a launch template into a chosen network profile (a subnet + security
-group defined in Terraform), with a lease (how long it stays up, extendable from the page up to MAX_SESSION_MINUTES).
+A jump is one EC2 instance launched from a launch template into a subnet you pick on the page (VPC and subnet
+dropdowns, discovered live; the VPC's default security group), with a lease (how long it stays up, extendable from the page up to MAX_SESSION_MINUTES).
 It is always terminated, never stopped, so it is stateless: the instance carries no state; configuration comes from
 the launch template, and you connect through SSM Session Manager (no inbound, no SSH key). The jump self-terminates
 when its lease runs out or after IDLE_SHUTDOWN_MINUTES with no SSM session.
@@ -19,9 +19,11 @@ Sign-in: two methods, each on or off; a request passes when any method that is o
                        public keys, aud, issuer and expiry. Identity = the email in it.
 
     GET  / , /api/ping , /api/me
-    GET  /api/config                 networks, targets, durations, idle shutdown, region, version
+    GET  /api/config                 durations, idle shutdown, region, version
+    GET  /api/networks               the VPCs and their subnets, discovered live (the launch dropdowns)
+    GET  /api/targets?vpc=vpc-…      RDS + ElastiCache endpoints in that VPC, plus the static extras (map-mode dropdown)
     GET  /api/jumps                  the running jumps, newest first, each with its lease end
-    POST /api/jumps                  {"network", "minutes"}: launch a jump in that network profile for that long
+    POST /api/jumps                  {"subnet", "minutes"}: launch a jump into that subnet for that long
     POST /api/jumps/<id>/extend      its lease + 1 hour, never past MAX_SESSION_MINUTES after launch
     POST /api/jumps/<id>/stop        terminate it
 
@@ -49,9 +51,7 @@ INSTANCE_TYPE = os.environ.get("INSTANCE_TYPE", "t4g.micro")
 REGION = os.environ.get("AWS_REGION", "")
 SSH_USER = os.environ.get("SSH_USER", "ec2-user")       # for the VPN-like SOCKS command
 LEASES = "leases/"
-NETWORKS = json.loads(os.environ.get("NETWORKS", "{}"))  # {name: {"subnets": [...], "groups": [...], "public": bool}}
-DEFAULT_NETWORK = os.environ.get("DEFAULT_NETWORK", next(iter(NETWORKS), ""))
-TARGETS = json.loads(os.environ.get("TARGETS", "[]"))    # ["db-host:3306", ...]: the map-mode dropdown
+TARGETS = json.loads(os.environ.get("TARGETS", "[]"))   # ["db-host:3306", ...]: static extras for the map-mode dropdown
 IDLE_SHUTDOWN_MINUTES = int(os.environ.get("IDLE_SHUTDOWN_MINUTES", "30"))
 MAX_SESSION_MINUTES = int(os.environ.get("MAX_SESSION_MINUTES", "480"))
 DURATIONS = [m for m in (60, 120, 240, 480) if m <= MAX_SESSION_MINUTES] or [MAX_SESSION_MINUTES]
@@ -74,9 +74,13 @@ PAGE_HEADERS = {"content-security-policy": CSP, "x-content-type-options": "nosni
                 "referrer-policy": "no-referrer", "x-frame-options": "DENY"}
 
 INSTANCE_ID = re.compile(r"i-[0-9a-f]{8,17}")
+SUBNET_ID = re.compile(r"subnet-[0-9a-f]{8,17}")
+VPC_ID = re.compile(r"vpc-[0-9a-f]{8,17}")
 
 ec2 = boto3.client("ec2")
 s3 = boto3.client("s3")
+rds = boto3.client("rds")
+elasticache = boto3.client("elasticache")
 
 
 class BadRequest(Exception):
@@ -186,7 +190,7 @@ def _tags(instance):
 def _summary(instance):
     tags = _tags(instance)
     jid = instance["InstanceId"]
-    return {"id": jid, "network": tags.get("Network", ""), "state": instance["State"]["Name"],
+    return {"id": jid, "network": tags.get("Network", ""), "vpc": tags.get("Vpc", ""), "state": instance["State"]["Name"],
             "launched": instance.get("LaunchTime"), "by": tags.get("StartedBy", ""),
             "until": (_lease(jid) or {}).get("until")}
 
@@ -213,10 +217,60 @@ def me(event):
 
 
 def config(event):
-    return {"networks": list(NETWORKS), "default_network": DEFAULT_NETWORK, "targets": TARGETS,
-            "durations": DURATIONS, "default_minutes": DEFAULT_MINUTES, "extend_minutes": EXTEND_MINUTES,
+    return {"durations": DURATIONS, "default_minutes": DEFAULT_MINUTES, "extend_minutes": EXTEND_MINUTES,
             "max_session_minutes": MAX_SESSION_MINUTES, "idle_shutdown_minutes": IDLE_SHUTDOWN_MINUTES,
             "max_jumps": MAX_JUMPS, "region": REGION, "ssh_user": SSH_USER, "version": VERSION}
+
+
+def _name(obj):
+    return {t["Key"]: t["Value"] for t in obj.get("Tags", [])}.get("Name", "")
+
+
+def networks(event):
+    """The launch dropdowns: every VPC and its subnets, discovered live."""
+    vpcs = {}
+    for v in ec2.describe_vpcs()["Vpcs"]:
+        vpcs[v["VpcId"]] = {"id": v["VpcId"], "name": _name(v), "cidr": v.get("CidrBlock", ""),
+                            "default": v.get("IsDefault", False), "subnets": []}
+    for sn in ec2.describe_subnets()["Subnets"]:
+        if sn["VpcId"] in vpcs:
+            vpcs[sn["VpcId"]]["subnets"].append(
+                {"id": sn["SubnetId"], "name": _name(sn), "az": sn["AvailabilityZone"],
+                 "cidr": sn.get("CidrBlock", ""), "public": sn.get("MapPublicIpOnLaunch", False)})
+    for v in vpcs.values():
+        v["subnets"].sort(key=lambda x: x["az"])
+    return {"vpcs": sorted(vpcs.values(), key=lambda x: (not x["default"], x["id"]))}
+
+
+def _discovered(vpc):
+    """RDS + ElastiCache endpoints living in that VPC, as host:port."""
+    out = []
+    for db in rds.describe_db_instances()["DBInstances"]:
+        ep = db.get("Endpoint") or {}
+        if (db.get("DBSubnetGroup") or {}).get("VpcId") == vpc and ep.get("Address"):
+            out.append(f"{ep['Address']}:{ep['Port']}")
+    groups = {g["CacheSubnetGroupName"]: g["VpcId"]
+              for g in elasticache.describe_cache_subnet_groups()["CacheSubnetGroups"]}
+    for c in elasticache.describe_cache_clusters(ShowCacheNodeInfo=True)["CacheClusters"]:
+        if groups.get(c.get("CacheSubnetGroupName")) != vpc:
+            continue
+        ep = c.get("ConfigurationEndpoint") or next(
+            (n["Endpoint"] for n in c.get("CacheNodes", []) if n.get("Endpoint")), None)
+        if ep:
+            out.append(f"{ep['Address']}:{ep['Port']}")
+    return out
+
+
+def targets(event):
+    vpc = (event.get("queryStringParameters") or {}).get("vpc", "")
+    if not VPC_ID.fullmatch(vpc):
+        raise BadRequest(f"vpc: a vpc id (vpc-…), got {vpc!r}")
+    seen, merged = set(), []
+    for t in _discovered(vpc) + TARGETS:
+        if t not in seen:
+            seen.add(t)
+            merged.append(t)
+    return {"targets": merged}
 
 
 def list_jumps(event):
@@ -225,29 +279,36 @@ def list_jumps(event):
 
 def start_jump(event):
     body = _body(event)
-    network, minutes = body.get("network", DEFAULT_NETWORK), body.get("minutes", DEFAULT_MINUTES)
-    if network not in NETWORKS:
-        raise BadRequest(f"network: one of {', '.join(NETWORKS)}, got {network!r}")
+    subnet, minutes = body.get("subnet", ""), body.get("minutes", DEFAULT_MINUTES)
+    if not SUBNET_ID.fullmatch(str(subnet)):
+        raise BadRequest(f"subnet: a subnet id (subnet-…), got {subnet!r}")
     if minutes not in DURATIONS:
         raise BadRequest(f"minutes: one of {', '.join(map(str, DURATIONS))}, got {minutes!r}")
     if len(_running()) >= MAX_JUMPS:
         raise Busy(f"{MAX_JUMPS} jump(s) up already (max_jumps): terminate one first")
-    net = NETWORKS[network]
-    nic = {"DeviceIndex": 0, "SubnetId": net["subnets"][0], "Groups": net["groups"],
-           "AssociatePublicIpAddress": bool(net.get("public", False))}
-    name = f"{PROJECT}-{network}"
+    found = ec2.describe_subnets(SubnetIds=[subnet])["Subnets"]
+    if not found:
+        raise NotFound(f"no subnet {subnet}")
+    sn = found[0]
+    vpc = sn["VpcId"]
+    sg = ec2.describe_security_groups(Filters=[
+        {"Name": "vpc-id", "Values": [vpc]}, {"Name": "group-name", "Values": ["default"]}])["SecurityGroups"]
+    if not sg:
+        raise NotFound(f"no default security group in {vpc}")
+    nic = {"DeviceIndex": 0, "SubnetId": subnet, "Groups": [sg[0]["GroupId"]],
+           "AssociatePublicIpAddress": bool(sn.get("MapPublicIpOnLaunch", False))}
     resp = ec2.run_instances(
         LaunchTemplate={"LaunchTemplateId": LAUNCH_TEMPLATE_ID}, InstanceType=INSTANCE_TYPE,
         MinCount=1, MaxCount=1, NetworkInterfaces=[nic],
         TagSpecifications=[{"ResourceType": "instance", "Tags": [
-            {"Key": "Project", "Value": PROJECT}, {"Key": "Network", "Value": network},
-            {"Key": "StartedBy", "Value": event["identity"]}, {"Key": "Name", "Value": name}]}])
+            {"Key": "Project", "Value": PROJECT}, {"Key": "Network", "Value": subnet}, {"Key": "Vpc", "Value": vpc},
+            {"Key": "StartedBy", "Value": event["identity"]}, {"Key": "Name", "Value": f"{PROJECT}-{subnet}"}]}])
     inst = resp["Instances"][0]
     until = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=minutes)
     _write_lease(inst["InstanceId"], until, event["identity"])
     out = _summary(inst)
     out["until"] = _iso(until)
-    print(json.dumps({"event": "jump_started", "id": inst["InstanceId"], "network": network,
+    print(json.dumps({"event": "jump_started", "id": inst["InstanceId"], "subnet": subnet, "vpc": vpc,
                       "until": out["until"], "by": event["identity"]}))
     return 201, out
 
@@ -296,6 +357,8 @@ ROUTES = [
     ("GET",  re.compile(r"/api/ping"), ping),
     ("GET",  re.compile(r"/api/me"), me),
     ("GET",  re.compile(r"/api/config"), config),
+    ("GET",  re.compile(r"/api/networks"), networks),
+    ("GET",  re.compile(r"/api/targets"), targets),
     ("GET",  re.compile(r"/api/jumps"), list_jumps),
     ("POST", re.compile(r"/api/jumps"), start_jump),
     ("POST", re.compile(JUMP + "/extend"), extend_jump),

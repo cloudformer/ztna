@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from conftest import FakeEC2, FakeS3, basic
+from conftest import FakeEC2, FakeElastiCache, FakeRDS, FakeS3, basic
 from ztna.server import lambda_function as lf
 
 
@@ -12,6 +12,8 @@ def aws(monkeypatch):
     ec2, s3 = FakeEC2(), FakeS3()
     monkeypatch.setattr(lf, "ec2", ec2)
     monkeypatch.setattr(lf, "s3", s3)
+    monkeypatch.setattr(lf, "rds", FakeRDS())
+    monkeypatch.setattr(lf, "elasticache", FakeElastiCache())
     return ec2, s3
 
 
@@ -28,8 +30,8 @@ def call(method, path, body=None, auth=True, query=None):
     return r["statusCode"], data
 
 
-def start(network="database", minutes=240):
-    return call("POST", "/api/jumps", {"network": network, "minutes": minutes})
+def start(subnet="subnet-aaaa1111", minutes=240):
+    return call("POST", "/api/jumps", {"subnet": subnet, "minutes": minutes})
 
 
 def jumps():
@@ -47,10 +49,26 @@ def test_api_needs_sign_in():
 
 def test_config():
     status, r = call("GET", "/api/config")
-    assert status == 200
-    assert set(r["networks"]) == {"database", "internet"} and r["default_network"] == "database"
-    assert r["targets"] == ["db-primary:3306", "cache-01:6379"] and r["region"] == "us-east-2"
+    assert status == 200 and r["region"] == "us-east-2"
     assert r["max_jumps"] == 2 and r["idle_shutdown_minutes"] == 30 and r["version"] == lf.VERSION
+
+
+def test_networks_lists_vpcs_and_their_subnets():
+    status, r = call("GET", "/api/networks")
+    assert status == 200 and [v["id"] for v in r["vpcs"]] == ["vpc-11111111", "vpc-22222222"]  # default first
+    sn = r["vpcs"][0]["subnets"]
+    assert [x["id"] for x in sn] == ["subnet-aaaa1111", "subnet-bbbb2222"]
+    assert sn[0]["public"] is False and sn[1]["public"] is True and r["vpcs"][1]["name"] == "prod"
+
+
+def test_targets_are_the_vpcs_endpoints_plus_the_static_extras():
+    status, r = call("GET", "/api/targets", query={"vpc": "vpc-11111111"})
+    assert status == 200
+    assert r["targets"] == ["db-a.abc.us-east-2.rds.example.com:3306",
+                            "redis-a.abc.cache.example.com:6379", "static-extra:9999"]
+    assert call("GET", "/api/targets", query={"vpc": "vpc-22222222"})[1]["targets"] == [
+        "db-b.abc.us-east-2.rds.example.com:5432", "static-extra:9999"]
+    assert call("GET", "/api/targets", query={"vpc": "oops"})[0] == 400
 
 
 def test_no_jumps_at_first():
@@ -59,23 +77,30 @@ def test_no_jumps_at_first():
 
 def test_start_jump(aws):
     ec2, s3 = aws
-    status, j = start("database")
-    assert status == 201 and j["network"] == "database" and j["state"] == "pending" and j["until"]
+    status, j = start("subnet-aaaa1111")
+    assert status == 201 and j["network"] == "subnet-aaaa1111" and j["vpc"] == "vpc-11111111"
+    assert j["state"] == "pending" and j["until"]
     assert j["id"] in ec2.instances                                   # the instance was launched
     assert f"leases/{j['id']}.json" in s3.objects                     # with a lease
-    assert ec2.runs[0]["nic"]["SubnetId"] == "subnet-1" and ec2.runs[0]["nic"]["AssociatePublicIpAddress"] is False
+    nic = ec2.runs[0]["nic"]
+    assert nic["SubnetId"] == "subnet-aaaa1111" and nic["AssociatePublicIpAddress"] is False
+    assert nic["Groups"] == ["sg-def11111"]                           # the VPC's default group
     assert [x["id"] for x in jumps()] == [j["id"]]
 
 
-def test_public_network_gets_a_public_ip(aws):
+def test_public_subnet_gets_a_public_ip(aws):
     ec2, _ = aws
-    start("internet")
-    assert ec2.runs[0]["nic"]["SubnetId"] == "subnet-2" and ec2.runs[0]["nic"]["AssociatePublicIpAddress"] is True
+    start("subnet-bbbb2222")
+    assert ec2.runs[0]["nic"]["SubnetId"] == "subnet-bbbb2222" and ec2.runs[0]["nic"]["AssociatePublicIpAddress"] is True
 
 
-@pytest.mark.parametrize("body", [{"network": "bogus", "minutes": 240}, {"network": "database", "minutes": 7}])
+@pytest.mark.parametrize("body", [{"subnet": "bogus", "minutes": 240}, {"subnet": "subnet-aaaa1111", "minutes": 7}])
 def test_bad_start_is_rejected(body, aws):
     assert call("POST", "/api/jumps", body)[0] == 400 and jumps() == []
+
+
+def test_unknown_subnet_is_not_found(aws):
+    assert call("POST", "/api/jumps", {"subnet": "subnet-00000000", "minutes": 240})[0] == 404
 
 
 def test_max_jumps(aws):

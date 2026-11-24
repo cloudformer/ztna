@@ -33,19 +33,13 @@ two usages.
   destroyed completely. Nothing is kept on it — configuration comes from the template (IaC), any results go to S3.
   A stopped, stateful box would defeat the point; IdleFree hosts are cattle, not pets.
 
-## Network profiles — pre-defined, only selectable
+## Networks — discovered live, picked at launch
 
-Each profile is a subnet + security group(s) defined in Terraform. The console only **selects** among them; a public
-web page can never define new network access.
-
-| Profile (example) | Network | Reaches |
-|---|---|---|
-| `rds` | private subnet + RDS SG | only that RDS, port 3306/5432 |
-| `redis` | private subnet + Redis SG | only Redis, 6379 |
-| `internal` | private subnet + several SGs | RDS / Redis / Kafka |
-| `internet` | public subnet, public IP | the internet (random IP), no private resources |
-
-The network (subnet + SG) is chosen at launch; the sign-in gate and least-privilege scoping come from IaC, not the page.
+The console's VPC and Subnet dropdowns are discovered live (`ec2:Describe*`, read-only): pick where the jump lands.
+It launches with that VPC's **default security group**, and gets a public IP exactly when the subnet assigns them.
+The map-mode Target dropdown lists the RDS and ElastiCache endpoints of the jump's VPC automatically (plus the
+static `targets` extras from Terraform); a custom host:port can always be typed. What a jump can actually reach is
+still decided by security groups in IaC — the page only picks among what exists, it can never define new access.
 
 ## Zero trust
 

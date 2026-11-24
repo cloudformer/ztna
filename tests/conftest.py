@@ -16,18 +16,40 @@ os.environ.update(
     BUCKET="test-ztna", PROJECT="test-ztna", LAUNCH_TEMPLATE_ID="lt-0123456789abcdef0",
     INSTANCE_TYPE="t4g.micro", SSH_USER="ec2-user",
     IDLE_SHUTDOWN_MINUTES="30", MAX_SESSION_MINUTES="480", MAX_JUMPS="2",
-    NETWORKS=json.dumps({"database": {"subnets": ["subnet-1"], "groups": ["sg-1"], "public": False},
-                         "internet": {"subnets": ["subnet-2"], "groups": ["sg-2"], "public": True}}),
-    DEFAULT_NETWORK="database",
-    TARGETS=json.dumps(["db-primary:3306", "cache-01:6379"]))
+    TARGETS=json.dumps(["static-extra:9999"]))
 
 NOW = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+
+
+# two VPCs: the default one with a private and a public subnet, and another that is empty
+VPCS = [{"VpcId": "vpc-11111111", "CidrBlock": "172.31.0.0/16", "IsDefault": True, "Tags": []},
+        {"VpcId": "vpc-22222222", "CidrBlock": "10.0.0.0/16", "IsDefault": False,
+         "Tags": [{"Key": "Name", "Value": "prod"}]}]
+SUBNETS = [{"SubnetId": "subnet-aaaa1111", "VpcId": "vpc-11111111", "AvailabilityZone": "us-east-2a",
+            "CidrBlock": "172.31.0.0/20", "MapPublicIpOnLaunch": False, "Tags": []},
+           {"SubnetId": "subnet-bbbb2222", "VpcId": "vpc-11111111", "AvailabilityZone": "us-east-2b",
+            "CidrBlock": "172.31.16.0/20", "MapPublicIpOnLaunch": True, "Tags": []}]
+GROUPS = [{"GroupId": "sg-def11111", "GroupName": "default", "VpcId": "vpc-11111111"},
+          {"GroupId": "sg-def22222", "GroupName": "default", "VpcId": "vpc-22222222"}]
 
 
 class FakeEC2:
     def __init__(self):
         self.instances = {}
         self.runs = []
+
+    def describe_vpcs(self):
+        return {"Vpcs": VPCS}
+
+    def describe_subnets(self, SubnetIds=None):
+        if SubnetIds is None:
+            return {"Subnets": SUBNETS}
+        return {"Subnets": [s for s in SUBNETS if s["SubnetId"] in SubnetIds]}
+
+    def describe_security_groups(self, Filters):
+        vpcs = next(f["Values"] for f in Filters if f["Name"] == "vpc-id")
+        names = next(f["Values"] for f in Filters if f["Name"] == "group-name")
+        return {"SecurityGroups": [g for g in GROUPS if g["VpcId"] in vpcs and g["GroupName"] in names]}
 
     def run_instances(self, LaunchTemplate, InstanceType, MinCount, MaxCount, NetworkInterfaces, TagSpecifications):
         iid = "i-0%015x" % len(self.instances)
@@ -60,6 +82,29 @@ class FakeEC2:
             if i in self.instances:
                 self.instances[i]["State"] = {"Name": "shutting-down"}
         return {}
+
+
+class FakeRDS:
+    """One MySQL in the default VPC, one Postgres in the other."""
+
+    def describe_db_instances(self):
+        return {"DBInstances": [
+            {"DBInstanceIdentifier": "db-a", "Endpoint": {"Address": "db-a.abc.us-east-2.rds.example.com", "Port": 3306},
+             "DBSubnetGroup": {"VpcId": "vpc-11111111"}},
+            {"DBInstanceIdentifier": "db-b", "Endpoint": {"Address": "db-b.abc.us-east-2.rds.example.com", "Port": 5432},
+             "DBSubnetGroup": {"VpcId": "vpc-22222222"}}]}
+
+
+class FakeElastiCache:
+    """One redis in the default VPC."""
+
+    def describe_cache_subnet_groups(self):
+        return {"CacheSubnetGroups": [{"CacheSubnetGroupName": "redis-net", "VpcId": "vpc-11111111"}]}
+
+    def describe_cache_clusters(self, ShowCacheNodeInfo):
+        return {"CacheClusters": [
+            {"CacheClusterId": "redis-a", "CacheSubnetGroupName": "redis-net", "ConfigurationEndpoint": None,
+             "CacheNodes": [{"Endpoint": {"Address": "redis-a.abc.cache.example.com", "Port": 6379}}]}]}
 
 
 class FakeS3:
